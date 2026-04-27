@@ -193,7 +193,7 @@ export default function KelolaHadiah() {
             </tr>
           </thead>
           <tbody>
-            {filteredHadiah.map((h) => 
+            {filteredHadiah.map((h) => {
               const status = getStatus(h.program_end);
               const penyedia = dummyPenyedia.find((p) => p.id === h.id_penyedia);
               return (
