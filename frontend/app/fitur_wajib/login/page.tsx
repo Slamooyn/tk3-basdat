@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { users } from "../data/dummydata";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,22 +12,24 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const dummyEmail = "admin@aero.com";
-    const dummyPassword = "123456";
+    const foundUser = users.find(
+      (u) => u.email === email && u.password === password
+    );
 
-    if (email !== dummyEmail || password !== dummyPassword) {
+    if (!foundUser) {
       setError("Email atau password salah");
       return;
     }
 
-    const dummyUser = {
-      name: "Mr. Admin Aero",
-      role: "Staff",
-      email,
-    };
+    // simpan user lengkap (biar bisa dipakai di dashboard/profile)
+    localStorage.setItem("user", JSON.stringify(foundUser));
 
-    localStorage.setItem("user", JSON.stringify(dummyUser));
-    router.push("/");
+    // redirect sesuai role
+    if (foundUser.role === "staff") {
+      router.push("/fitur_wajib/dashboard");
+    } else {
+      router.push("/fitur_wajib/dashboard");
+    }
   };
 
   return (
@@ -50,8 +53,11 @@ export default function LoginPage() {
           >
             <h2 className="font-semibold mb-1">Login</h2>
             <p className="text-sm text-gray-500 mb-4">
-              Email: admin@aero.com <br />
-              Password: 123456
+              Coba:
+              <br />
+              admin@aero.com / 123456 (Staff)
+              <br />
+              john@example.com / 123456 (Member)
             </p>
 
             {error && (

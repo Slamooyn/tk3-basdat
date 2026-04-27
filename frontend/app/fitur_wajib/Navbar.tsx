@@ -31,13 +31,13 @@ export default function Navbar() {
 
                     {user && (
                         <>
-                            <Link href="#">Dashboard</Link>
-                            <Link href="#">Kelola Member</Link>
-                            <Link href="#">Kelola Klaim</Link>
-                            <Link href="#">Kelola Hadiah</Link>
-                            <Link href="#">Kelola Mitra</Link>
-                            <Link href="#">Laporan Transaksi</Link>
-                            <Link href="#">Pengaturan Profil</Link>
+                            <Link href="/fitur_wajib/dashboard">Dashboard</Link>
+                            <Link href="/fitur_wajib/kelola-member">Kelola Member</Link>
+                            <Link href="/fitur_wajib/kelola-klaim">Kelola Klaim</Link>
+                            <Link href="/fitur_wajib/kelola-hadiah">Kelola Hadiah</Link>
+                            <Link href="/fitur_wajib/kelola-mitra">Kelola Mitra</Link>
+                            <Link href="/fitur_wajib/laporan-transaksi">Laporan Transaksi</Link>
+                            <Link href="/fitur_wajib/profile">Pengaturan Profil</Link>
                         </>
                     )}
                 </div>
