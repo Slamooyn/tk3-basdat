@@ -21,10 +21,7 @@ export default function LoginPage() {
       return;
     }
 
-    // simpan user lengkap (biar bisa dipakai di dashboard/profile)
     localStorage.setItem("user", JSON.stringify(foundUser));
-
-    // redirect sesuai role
     if (foundUser.role === "staff") {
       router.push("/fitur_wajib/dashboard");
     } else {

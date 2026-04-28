@@ -12,7 +12,7 @@ export default function Navbar() {
         const stored = localStorage.getItem("user");
         if (stored) setUser(JSON.parse(stored));
         else setUser(null);
-    }, [pathname]); // 🔥 update tiap pindah page
+    }, [pathname]);
 
     const handleLogout = () => {
         localStorage.removeItem("user");
