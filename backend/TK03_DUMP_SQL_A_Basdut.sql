@@ -1,3 +1,5 @@
+
+
 CREATE TABLE tier (
     id_tier VARCHAR(10) PRIMARY KEY,
     nama VARCHAR(50) NOT NULL,
