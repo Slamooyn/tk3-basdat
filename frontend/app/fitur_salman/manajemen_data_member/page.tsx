@@ -71,8 +71,6 @@ export default function Page() {
                     Tambah Member
                 </button>
             </div>
-
-            {/* SEARCH + FILTER */}
             <div className="flex gap-3 mb-4">
                 <div className="flex items-center bg-white border rounded-lg px-3 py-2 w-full shadow-sm">
                     <FiSearch className="text-gray-400 mr-2" />
@@ -137,29 +135,19 @@ export default function Page() {
                     </tbody>
                 </table>
             </div>
-
-            {/* ================= EDIT MODAL ================= */}
             {showEdit && selectedMember && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
                     <div className="bg-white w-[720px] rounded-2xl p-8 relative shadow-xl">
-
-                        {/* CLOSE */}
                         <button
                             onClick={() => setShowEdit(false)}
                             className="absolute right-5 top-4 text-gray-400 hover:text-gray-600 text-lg"
                         >
                             ✕
                         </button>
-
-                        {/* TITLE */}
                         <h2 className="text-xl font-semibold mb-6">
                             Edit Member
                         </h2>
-
-                        {/* FORM */}
                         <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-
-                            {/* SALUTATION */}
                             <div className="col-span-2">
                                 <label className="text-sm text-gray-600 block mb-1">
                                     Salutation
@@ -168,8 +156,6 @@ export default function Page() {
                                     <option>Mr.</option>
                                 </select>
                             </div>
-
-                            {/* NAMA */}
                             <div>
                                 <label className="text-sm text-gray-600 block mb-1">
                                     Nama Depan
@@ -250,8 +236,6 @@ export default function Page() {
                                 </select>
                             </div>
                         </div>
-
-                        {/* BUTTON */}
                         <div className="flex justify-end mt-8">
                             <button className="bg-[var(--color-navy-dark)] text-white px-6 py-2.5 rounded-xl shadow hover:opacity-90">
                                 Simpan
@@ -263,23 +247,16 @@ export default function Page() {
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
                     <div className="bg-white w-[720px] rounded-2xl p-8 relative shadow-xl">
 
-                        {/* CLOSE */}
                         <button
                             onClick={() => setShowAdd(false)}
                             className="absolute right-5 top-4 text-gray-400 hover:text-gray-600 text-lg"
                         >
                             ✕
                         </button>
-
-                        {/* TITLE */}
                         <h2 className="text-xl font-semibold mb-6">
                             Tambah Member Baru
                         </h2>
-
-                        {/* FORM */}
                         <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-
-                            {/* EMAIL & PASSWORD */}
                             <div>
                                 <label className="text-sm text-gray-600 block mb-1">
                                     Email
@@ -293,8 +270,6 @@ export default function Page() {
                                 </label>
                                 <input type="password" className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm shadow-sm" />
                             </div>
-
-                            {/* SALUTATION */}
                             <div className="col-span-2">
                                 <label className="text-sm text-gray-600 block mb-1">
                                     Salutation
@@ -303,8 +278,6 @@ export default function Page() {
                                     <option>Mr.</option>
                                 </select>
                             </div>
-
-                            {/* NAMA DEPAN + EMPTY (biar layout sama) */}
                             <div>
                                 <label className="text-sm text-gray-600 block mb-1">
                                     Nama Depan
@@ -391,7 +364,6 @@ export default function Page() {
 
                             <button
                                 onClick={() => {
-                                    // sementara cuma close (belum delete real)
                                     setShowDelete(false);
                                 }}
                                 className="px-5 py-2 bg-[var(--color-navy-dark)] text-white rounded-lg text-sm shadow"

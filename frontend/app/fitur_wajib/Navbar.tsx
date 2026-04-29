@@ -32,6 +32,7 @@ export default function Navbar() {
                     {user && (
                         <>
                             <Link href="/fitur_wajib/dashboard">Dashboard</Link>
+                            <Link href="/fitur_salman/manajemen_identitas_member">Identitas Saya</Link>
                             <Link href="/fitur_salman/manajemen_data_member">Kelola Member</Link>
                             <Link href="/fitur_wajib/kelola-klaim">Kelola Klaim</Link>
                             <Link href="/fitur_wajib/kelola-hadiah">Kelola Hadiah</Link>
