@@ -18,8 +18,6 @@ export default function RegisterPage() {
 
           <div className="bg-white p-6 rounded-xl shadow-md text-left mt-6">
             <h2 className="font-semibold mb-1">Registrasi</h2>
-
-            {/* 🔥 SWITCH */}
             <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
               <button
                 onClick={() => setRole("member")}
@@ -94,8 +92,6 @@ export default function RegisterPage() {
               type="date"
               className="w-full mt-3 px-3 py-2 border rounded-md"
             />
-
-            {/* 🔥 CONDITIONAL STAFF */}
             {role === "staff" && (
               <>
                 <hr className="my-4" />

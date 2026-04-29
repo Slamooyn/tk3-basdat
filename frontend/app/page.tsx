@@ -11,8 +11,10 @@ export default function Home() {
 
     if (!user) {
       router.replace("/fitur_wajib/login");
+    } else {
+      router.replace("/fitur_wajib/dashboard");
     }
   }, []);
 
-  return <h1 className="p-4">Dashboard</h1>;
+  return null;
 }
