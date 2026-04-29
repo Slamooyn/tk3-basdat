@@ -89,29 +89,6 @@ export default function LaporanTransaksi() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-[#0f1b35] text-white px-6 py-3 flex items-center gap-5 text-sm flex-wrap">
-        <span className="font-bold text-base tracking-wide mr-2">✈ AeroMiles</span>
-        <span className="text-gray-400 text-xs border-r border-gray-600 pr-4">Dashboard</span>
-        {["Kelola Member", "Kelola Klaim", "Kelola Hadiah", "Kelola Mitra"].map((item) => (
-          <a key={item} href="#" className="text-gray-300 hover:text-white transition-colors">
-            {item}
-          </a>
-        ))}
-        <a href="#" className="text-white font-semibold border-b border-white pb-0.5">
-          Laporan Transaksi
-        </a>
-        <a href="#" className="text-gray-300 hover:text-white transition-colors">
-          Pengaturan Profil
-        </a>
-        <a href="#" className="ml-auto text-red-400 hover:text-red-300 transition-colors">
-          ⎋ Logout
-        </a>
-      </nav>
-      <div className="bg-[#0f1b35] text-gray-400 text-xs px-6 pb-2">
-        Masuk sebagai{" "}
-        <span className="text-blue-400 font-medium">{dummyStaf.nama}</span> · Staff
-      </div>
-
       <div className="max-w-5xl mx-auto px-6 py-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Laporan & Riwayat Transaksi</h1>
         <div className="grid grid-cols-3 gap-4 mb-7">

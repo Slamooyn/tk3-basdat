@@ -156,24 +156,7 @@ export default function TransferMilesMember() {
 
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-white font-sans">
-      {/* Navbar */}
-      <nav className="bg-[#0d1530] border-b border-white/10 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-[#4fa3e0] text-xl font-bold tracking-tight">✈ AeroMiles</span>
-          <span className="text-white/30 text-sm hidden md:block">|</span>
-          <span className="text-white/60 text-sm hidden md:block">
-            Masuk sebagai Mr. John Doe · Member
-          </span>
-        </div>
-        <div className="flex items-center gap-4 text-sm text-white/60">
-          <span>Dashboard</span>
-          <span>Klaim Miles</span>
-          <span className="text-[#4fa3e0] font-semibold border-b border-[#4fa3e0]">Transfer Miles</span>
-          <span>Redeem Hadiah</span>
-          <span>Beli Package</span>
-          <span>Logout</span>
-        </div>
-      </nav>
+
 
       <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Header */}

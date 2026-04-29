@@ -97,18 +97,6 @@ export default function KelolaMitra() {
         <p className="text-sm text-gray-500">Masuk sebagai Mr. Admin Aero - Staf</p>
       </div>
 
-      {/* Navbar */}
-      <nav className="bg-[#1a2e4a] text-white px-6 py-3 rounded-lg mb-6 flex gap-6 text-sm font-medium">
-        <span className="cursor-pointer hover:text-gray-300">Dashboard</span>
-        <span className="cursor-pointer hover:text-gray-300">Kelola Member</span>
-        <span className="cursor-pointer hover:text-gray-300">Kelola Klaim</span>
-        <span className="cursor-pointer hover:text-gray-300">Kelola Hadiah</span>
-        <span className="text-yellow-300 border-b-2 border-yellow-300">Kelola Mitra</span>
-        <span className="cursor-pointer hover:text-gray-300">Laporan Transaksi</span>
-        <span className="cursor-pointer hover:text-gray-300">Pengaturan Profil</span>
-        <span className="text-red-400 cursor-pointer hover:text-red-300">Logout</span>
-      </nav>
-
       {/* Tombol Tambah */}
       <div className="flex justify-end mb-4">
         <button
