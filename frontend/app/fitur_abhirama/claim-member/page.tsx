@@ -111,19 +111,13 @@ const formatClaimNo = (id: number) => `CLM-${String(id).padStart(3, "0")}`;
 const getStatusStyle = (status: string) => {
   switch (status) {
     case "Disetujui":
-      return "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+      return "bg-emerald-50 text-emerald-700 border border-emerald-200";
     case "Ditolak":
-      return "bg-red-500/20 text-red-300 border border-red-500/40";
+      return "bg-red-50 text-red-600 border border-red-200";
     default:
-      return "bg-amber-500/20 text-amber-300 border border-amber-500/40";
+      return "bg-amber-50 text-amber-600 border border-amber-200";
   }
 };
-
-const getBandaraLabel = (iata: string) =>
-  BANDARA_OPTIONS.find((b) => b.iata === iata)?.label ?? iata;
-
-const getMaskapaiLabel = (kode: string) =>
-  MASKAPAI_OPTIONS.find((m) => m.kode === kode)?.nama ?? kode;
 
 // ===================== FORM STATE =====================
 interface FormState {
@@ -247,20 +241,20 @@ export default function KlaimMissingMilesMember() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white font-sans">
+    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">Klaim Missing Miles</h1>
-            <p className="text-white/50 text-sm mt-1">
+            <h1 className="text-2xl font-bold text-gray-800">Klaim Missing Miles</h1>
+            <p className="text-gray-500 text-sm mt-1">
               Award Miles tersedia:{" "}
-              <span className="text-[#4fa3e0] font-semibold">{LOGGED_IN_MEMBER_AWARD_MILES.toLocaleString()}</span>
+              <span className="text-blue-500 font-semibold">{LOGGED_IN_MEMBER_AWARD_MILES.toLocaleString()}</span>
             </p>
           </div>
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 bg-[#4fa3e0] hover:bg-[#3b8bc7] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm"
           >
             + Ajukan Klaim
           </button>
@@ -274,8 +268,8 @@ export default function KlaimMissingMilesMember() {
               onClick={() => setStatusFilter(s)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
                 statusFilter === s
-                  ? "bg-[#4fa3e0] border-[#4fa3e0] text-white"
-                  : "border-white/20 text-white/50 hover:border-white/40 hover:text-white/80"
+                  ? "bg-blue-500 border-blue-500 text-white"
+                  : "border-gray-200 text-gray-500 bg-white hover:border-gray-300 hover:text-gray-700"
               }`}
             >
               {s}
@@ -284,11 +278,11 @@ export default function KlaimMissingMilesMember() {
         </div>
 
         {/* Table */}
-        <div className="bg-[#0d1530] rounded-xl border border-white/10 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-white/50">
+                <tr className="border-b border-gray-100 bg-gray-50 text-gray-500">
                   <th className="text-left px-4 py-3 font-medium">No. Klaim</th>
                   <th className="text-left px-4 py-3 font-medium">Maskapai</th>
                   <th className="text-left px-4 py-3 font-medium">Rute</th>
@@ -303,48 +297,48 @@ export default function KlaimMissingMilesMember() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-12 text-white/30">
+                    <td colSpan={9} className="text-center py-12 text-gray-400">
                       Tidak ada klaim ditemukan.
                     </td>
                   </tr>
                 ) : (
                   filtered.map((claim) => (
-                    <tr key={claim.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                      <td className="px-4 py-3 font-mono text-[#4fa3e0]">{formatClaimNo(claim.id)}</td>
-                      <td className="px-4 py-3 text-white/80">{claim.maskapai}</td>
-                      <td className="px-4 py-3 text-white/80">
+                    <tr key={claim.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-mono text-blue-500 font-semibold">{formatClaimNo(claim.id)}</td>
+                      <td className="px-4 py-3 text-gray-600">{claim.maskapai}</td>
+                      <td className="px-4 py-3 text-gray-600">
                         {claim.bandara_asal} → {claim.bandara_tujuan}
                       </td>
-                      <td className="px-4 py-3 text-white/70">{claim.tanggal_penerbangan}</td>
-                      <td className="px-4 py-3 text-white/70">{claim.flight_number}</td>
-                      <td className="px-4 py-3 text-white/70">{claim.kelas_kabin}</td>
+                      <td className="px-4 py-3 text-gray-600">{claim.tanggal_penerbangan}</td>
+                      <td className="px-4 py-3 text-gray-600">{claim.flight_number}</td>
+                      <td className="px-4 py-3 text-gray-600">{claim.kelas_kabin}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusStyle(claim.status_penerimaan)}`}>
                           {claim.status_penerimaan}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-white/50 text-xs">{claim.timestamp}</td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">{claim.timestamp}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           {claim.status_penerimaan === "Menunggu" ? (
                             <>
                               <button
                                 onClick={() => openEdit(claim)}
-                                className="text-white/40 hover:text-[#4fa3e0] transition-colors"
+                                className="text-gray-400 hover:text-blue-500 transition-colors"
                                 title="Edit"
                               >
                                 ✏️
                               </button>
                               <button
                                 onClick={() => setDeleteTarget(claim)}
-                                className="text-white/40 hover:text-red-400 transition-colors"
+                                className="text-gray-400 hover:text-red-500 transition-colors"
                                 title="Batalkan"
                               >
                                 🗑️
                               </button>
                             </>
                           ) : (
-                            <span className="text-white/20 text-xs">—</span>
+                            <span className="text-gray-300 text-xs">—</span>
                           )}
                         </div>
                       </td>
@@ -359,18 +353,18 @@ export default function KlaimMissingMilesMember() {
 
       {/* ===== MODAL AJUKAN / EDIT KLAIM ===== */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0d1530] border border-white/15 rounded-2xl w-full max-w-lg shadow-2xl">
-            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/10">
-              <h2 className="text-white font-semibold text-base">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-lg shadow-xl">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+              <h2 className="text-gray-800 font-semibold text-base">
                 {editingClaim ? "Edit Klaim" : "Ajukan Klaim Baru"}
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-white/40 hover:text-white text-lg">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
             </div>
 
             <div className="px-6 py-5 space-y-4">
               {formError && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm px-3 py-2 rounded-lg">
+                <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2 rounded-lg">
                   {formError}
                 </div>
               )}
@@ -378,29 +372,27 @@ export default function KlaimMissingMilesMember() {
               {/* Row 1 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-white/60 text-xs mb-1 block">Maskapai *</label>
+                  <label className="text-gray-500 text-xs font-medium mb-1 block">Maskapai *</label>
                   <select
                     value={form.maskapai}
                     onChange={(e) => setForm({ ...form, maskapai: e.target.value })}
-                    className="w-full bg-white/5 border border-white/15 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#4fa3e0]"
+                    className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 shadow-sm"
                   >
                     <option value="">Pilih maskapai</option>
                     {MASKAPAI_OPTIONS.map((m) => (
-                      <option key={m.kode} value={m.kode} className="bg-[#0d1530]">
-                        {m.nama}
-                      </option>
+                      <option key={m.kode} value={m.kode}>{m.nama}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="text-white/60 text-xs mb-1 block">Kelas Kabin *</label>
+                  <label className="text-gray-500 text-xs font-medium mb-1 block">Kelas Kabin *</label>
                   <select
                     value={form.kelas_kabin}
                     onChange={(e) => setForm({ ...form, kelas_kabin: e.target.value as KelasKabin })}
-                    className="w-full bg-white/5 border border-white/15 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#4fa3e0]"
+                    className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 shadow-sm"
                   >
                     {KELAS_KABIN_OPTIONS.map((k) => (
-                      <option key={k} value={k} className="bg-[#0d1530]">{k}</option>
+                      <option key={k} value={k}>{k}</option>
                     ))}
                   </select>
                 </div>
@@ -409,28 +401,28 @@ export default function KlaimMissingMilesMember() {
               {/* Row 2 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-white/60 text-xs mb-1 block">Bandara Asal *</label>
+                  <label className="text-gray-500 text-xs font-medium mb-1 block">Bandara Asal *</label>
                   <select
                     value={form.bandara_asal}
                     onChange={(e) => setForm({ ...form, bandara_asal: e.target.value })}
-                    className="w-full bg-white/5 border border-white/15 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#4fa3e0]"
+                    className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 shadow-sm"
                   >
                     <option value="">Pilih bandara</option>
                     {BANDARA_OPTIONS.map((b) => (
-                      <option key={b.iata} value={b.iata} className="bg-[#0d1530]">{b.label}</option>
+                      <option key={b.iata} value={b.iata}>{b.label}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="text-white/60 text-xs mb-1 block">Bandara Tujuan *</label>
+                  <label className="text-gray-500 text-xs font-medium mb-1 block">Bandara Tujuan *</label>
                   <select
                     value={form.bandara_tujuan}
                     onChange={(e) => setForm({ ...form, bandara_tujuan: e.target.value })}
-                    className="w-full bg-white/5 border border-white/15 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#4fa3e0]"
+                    className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 shadow-sm"
                   >
                     <option value="">Pilih bandara</option>
                     {BANDARA_OPTIONS.map((b) => (
-                      <option key={b.iata} value={b.iata} className="bg-[#0d1530]">{b.label}</option>
+                      <option key={b.iata} value={b.iata}>{b.label}</option>
                     ))}
                   </select>
                 </div>
@@ -439,22 +431,22 @@ export default function KlaimMissingMilesMember() {
               {/* Row 3 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-white/60 text-xs mb-1 block">Tanggal Penerbangan *</label>
+                  <label className="text-gray-500 text-xs font-medium mb-1 block">Tanggal Penerbangan *</label>
                   <input
                     type="date"
                     value={form.tanggal_penerbangan}
                     onChange={(e) => setForm({ ...form, tanggal_penerbangan: e.target.value })}
-                    className="w-full bg-white/5 border border-white/15 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#4fa3e0]"
+                    className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 shadow-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-white/60 text-xs mb-1 block">Flight Number *</label>
+                  <label className="text-gray-500 text-xs font-medium mb-1 block">Flight Number *</label>
                   <input
                     type="text"
                     placeholder="cth: GA404"
                     value={form.flight_number}
                     onChange={(e) => setForm({ ...form, flight_number: e.target.value })}
-                    className="w-full bg-white/5 border border-white/15 text-white text-sm rounded-lg px-3 py-2 placeholder:text-white/25 focus:outline-none focus:border-[#4fa3e0]"
+                    className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 placeholder:text-gray-300 focus:outline-none focus:border-blue-400 shadow-sm"
                   />
                 </div>
               </div>
@@ -462,23 +454,23 @@ export default function KlaimMissingMilesMember() {
               {/* Row 4 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-white/60 text-xs mb-1 block">Nomor Tiket *</label>
+                  <label className="text-gray-500 text-xs font-medium mb-1 block">Nomor Tiket *</label>
                   <input
                     type="text"
                     placeholder="cth: 0011223345"
                     value={form.nomor_tiket}
                     onChange={(e) => setForm({ ...form, nomor_tiket: e.target.value })}
-                    className="w-full bg-white/5 border border-white/15 text-white text-sm rounded-lg px-3 py-2 placeholder:text-white/25 focus:outline-none focus:border-[#4fa3e0]"
+                    className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 placeholder:text-gray-300 focus:outline-none focus:border-blue-400 shadow-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-white/60 text-xs mb-1 block">PNR *</label>
+                  <label className="text-gray-500 text-xs font-medium mb-1 block">PNR *</label>
                   <input
                     type="text"
                     placeholder="cth: P52DKC"
                     value={form.pnr}
                     onChange={(e) => setForm({ ...form, pnr: e.target.value })}
-                    className="w-full bg-white/5 border border-white/15 text-white text-sm rounded-lg px-3 py-2 placeholder:text-white/25 focus:outline-none focus:border-[#4fa3e0]"
+                    className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 placeholder:text-gray-300 focus:outline-none focus:border-blue-400 shadow-sm"
                   />
                 </div>
               </div>
@@ -487,13 +479,13 @@ export default function KlaimMissingMilesMember() {
             <div className="px-6 pb-5 flex justify-end gap-3">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm text-white/60 hover:text-white border border-white/15 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg transition-colors"
               >
                 Batal
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-5 py-2 text-sm font-semibold bg-[#4fa3e0] hover:bg-[#3b8bc7] text-white rounded-lg transition-colors"
+                className="px-5 py-2 text-sm font-semibold bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
               >
                 {editingClaim ? "Simpan" : "Ajukan"}
               </button>
@@ -504,16 +496,16 @@ export default function KlaimMissingMilesMember() {
 
       {/* ===== MODAL KONFIRMASI BATALKAN ===== */}
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0d1530] border border-white/15 rounded-2xl w-full max-w-sm shadow-2xl px-6 py-6">
-            <h2 className="text-white font-semibold text-base mb-2">Batalkan Klaim?</h2>
-            <p className="text-white/50 text-sm mb-5">
-              Klaim <span className="text-white/80 font-medium">{formatClaimNo(deleteTarget.id)}</span> akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-sm shadow-xl px-6 py-6">
+            <h2 className="text-gray-800 font-semibold text-base mb-2">Batalkan Klaim?</h2>
+            <p className="text-gray-500 text-sm mb-5">
+              Klaim <span className="text-gray-700 font-medium">{formatClaimNo(deleteTarget.id)}</span> akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-sm text-white/60 hover:text-white border border-white/15 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg transition-colors"
               >
                 Batal
               </button>
