@@ -39,12 +39,16 @@ CREATE TABLE maskapai (
     id_penyedia INT NOT NULL,
     CONSTRAINT fk_maskapai_penyedia FOREIGN KEY (id_penyedia) REFERENCES penyedia(id));
 
+CREATE SEQUENCE staf_id_seq START 1;
+
 CREATE TABLE staf (
     email VARCHAR(100) PRIMARY KEY,
-    id_staf VARCHAR(20)  NOT NULL UNIQUE,
-    kode_maskapai VARCHAR(10)  NOT NULL,
+    id_staf VARCHAR(20) NOT NULL UNIQUE 
+        DEFAULT 'S' || LPAD(NEXTVAL('staf_id_seq')::TEXT, 4, '0'),
+    kode_maskapai VARCHAR(10) NOT NULL,
     CONSTRAINT fk_staf_pengguna FOREIGN KEY (email) REFERENCES pengguna(email),
-    CONSTRAINT fk_staf_maskapai FOREIGN KEY (kode_maskapai) REFERENCES maskapai(kode_maskapai));
+    CONSTRAINT fk_staf_maskapai FOREIGN KEY (kode_maskapai) REFERENCES maskapai(kode_maskapai)
+);
 
 CREATE TABLE mitra (
     email_mitra VARCHAR(100) PRIMARY KEY,
@@ -62,10 +66,13 @@ CREATE TABLE identitas (
     jenis VARCHAR(30) NOT NULL CHECK (jenis IN ('Paspor', 'KTP', 'SIM')),
     CONSTRAINT fk_identitas_member FOREIGN KEY (email_member) REFERENCES member(email) ON DELETE CASCADE);
 
+CREATE SEQUENCE amp_id_seq START 1;
+
 CREATE TABLE award_miles_package (
-    id VARCHAR(20) PRIMARY KEY,
+    id VARCHAR(20) DEFAULT 'AMP-' || LPAD(NEXTVAL('amp_id_seq')::TEXT, 3, '0') PRIMARY KEY,
     harga_paket DECIMAL(15, 2) NOT NULL,
-    jumlah_award_miles INT NOT NULL);
+    jumlah_award_miles INT NOT NULL
+);
 
 CREATE TABLE member_award_miles_package (
     id_award_miles_package VARCHAR(20) NOT NULL,
@@ -113,15 +120,18 @@ CREATE TABLE transfer (
     CONSTRAINT fk_transfer_penerima FOREIGN KEY (email_member_2) REFERENCES member(email) ON DELETE CASCADE,
     CONSTRAINT chk_transfer_beda_member CHECK (email_member_1 <> email_member_2));
 
+CREATE SEQUENCE hadiah_kode_seq START 1;
+
 CREATE TABLE hadiah (
-    kode_hadiah VARCHAR(20) PRIMARY KEY,
+    kode_hadiah VARCHAR(20) DEFAULT 'RWD-' || LPAD(NEXTVAL('hadiah_kode_seq')::TEXT, 3, '0') PRIMARY KEY,
     nama VARCHAR(100) NOT NULL,
     miles INT NOT NULL,
     deskripsi TEXT,
     valid_start_date DATE NOT NULL,
     program_end DATE NOT NULL,
     id_penyedia INT NOT NULL,
-    CONSTRAINT fk_hadiah_penyedia FOREIGN KEY (id_penyedia) REFERENCES penyedia(id) ON DELETE CASCADE);
+    CONSTRAINT fk_hadiah_penyedia FOREIGN KEY (id_penyedia) REFERENCES penyedia(id) ON DELETE CASCADE
+);
  
 CREATE TABLE redeem (
     email_member VARCHAR(100) NOT NULL,
@@ -270,17 +280,17 @@ INSERT INTO maskapai (kode_maskapai, nama_maskapai, id_penyedia) VALUES
 ('SJ',  'Sriwijaya Air',      4),
 ('ID',  'Batik Air',          5);
 
-INSERT INTO staf (email, id_staf, kode_maskapai) VALUES
-('james.lee@gmail.com',        'STF2024000001', 'GA'),
-('rachel.lim@gmail.com',       'STF2024000002', 'GA'),
-('dr.putri@gmail.com',         'STF2024000003', 'JT'),
-('andi.gunawan@gmail.com',     'STF2024000004', 'JT'),
-('yeni.angkasa@gmail.com',     'STF2024000005', 'QZ'),
-('dimas.ardiansyah@gmail.com', 'STF2024000006', 'QZ'),
-('helmi.syahputra@gmail.com',  'STF2024000007', 'SJ'),
-('wahid.abdurrahman@gmail.com','STF2024000008', 'SJ'),
-('dr.natalia@gmail.com',       'STF2024000009', 'ID'),
-('ivan.christianto@gmail.com', 'STF2024000010', 'ID');
+INSERT INTO staf (email, kode_maskapai) VALUES
+('james.lee@gmail.com',        'GA'),
+('rachel.lim@gmail.com',       'GA'),
+('dr.putri@gmail.com',         'JT'),
+('andi.gunawan@gmail.com',     'JT'),
+('yeni.angkasa@gmail.com',     'QZ'),
+('dimas.ardiansyah@gmail.com', 'QZ'),
+('helmi.syahputra@gmail.com',  'SJ'),
+('wahid.abdurrahman@gmail.com','SJ'),
+('dr.natalia@gmail.com',       'ID'),
+('ivan.christianto@gmail.com', 'ID');
 
 INSERT INTO mitra (email_mitra, id_penyedia, nama_mitra, tanggal_kerja_sama) VALUES
 ('partnership@hotelmulia.com',    6,  'Hotel Mulia',          '2019-03-15'),
@@ -321,12 +331,12 @@ INSERT INTO identitas (nomor, email_member, tanggal_habis, tanggal_terbit, negar
 ('SIM3271020005',   'teguh.wibowo@gmail.com',     '2026-08-26', '2021-08-26', 'Indonesia', 'SIM'),
 ('SIM3275010006',   'galih.saputra@gmail.com',    '2028-09-07', '2023-09-07', 'Indonesia', 'SIM');
 
-INSERT INTO award_miles_package (id, harga_paket, jumlah_award_miles) VALUES
-('AMP-1000',   150000.00,   1000),
-('AMP-3000',   400000.00,   3000),
-('AMP-5000',   625000.00,   5000),
-('AMP-10000', 1150000.00,  10000),
-('AMP-25000', 2500000.00,  25000);
+INSERT INTO award_miles_package (harga_paket, jumlah_award_miles) VALUES
+(150000.00,    1000),
+(400000.00,    3000),
+(625000.00,    5000),
+(1150000.00,  10000),
+(2500000.00,  25000);
 
 INSERT INTO bandara (iata_code, nama, kota, negara) VALUES
 ('CGK', 'Bandar Udara Internasional Soekarno-Hatta',              'Tangerang',    'Indonesia'),
@@ -346,26 +356,26 @@ INSERT INTO bandara (iata_code, nama, kota, negara) VALUES
 ('SYD', 'Bandar Udara Internasional Kingsford Smith',              'Sydney',       'Australia');
 
 INSERT INTO member_award_miles_package (id_award_miles_package, email_member, timestamp) VALUES
-('AMP-1000', 'nurhasanah@gmail.com',        '2023-03-10 09:15:00'),
-('AMP-1000', 'dewi.lestari@gmail.com',      '2023-06-22 14:30:00'),
-('AMP-1000', 'tiara.anggraini@gmail.com',   '2024-01-15 10:00:00'),
-('AMP-1000', 'nadia.safitri@gmail.com',     '2024-02-20 16:45:00'),
-('AMP-3000', 'budi.santoso@gmail.com',      '2022-05-18 11:00:00'),
-('AMP-3000', 'fitri.handayani@gmail.com',   '2023-09-05 13:20:00'),
-('AMP-3000', 'ayu.maharani@gmail.com',      '2023-10-11 08:45:00'),
-('AMP-3000', 'lina.oktavia@gmail.com',      '2024-03-30 15:10:00'),
-('AMP-5000', 'ahmad.fauzi@yahoo.com',       '2022-08-07 10:30:00'),
-('AMP-5000', 'kevin.tan@gmail.com',         '2022-12-25 19:00:00'),
-('AMP-5000', 'andre.setiawan@gmail.com',    '2023-04-14 12:15:00'),
-('AMP-5000', 'galih.saputra@gmail.com',     '2023-11-03 17:30:00'),
-('AMP-10000', 'dr.hendra@gmail.com',        '2021-07-20 09:00:00'),
-('AMP-10000', 'bambang.irawan@gmail.com',   '2022-02-14 11:30:00'),
-('AMP-10000', 'rudi.hartono@gmail.com',     '2022-10-08 14:00:00'),
-('AMP-10000', 'teguh.wibowo@gmail.com',     '2023-05-25 16:20:00'),
-('AMP-25000', 'dr.anita@yahoo.com',         '2020-09-01 08:00:00'),
-('AMP-25000', 'dr.baskoro@gmail.com',       '2021-03-17 10:45:00'),
-('AMP-25000', 'sri.mulyani@gmail.com',      '2022-07-04 13:00:00'),
-('AMP-25000', 'dr.arief@gmail.com',         '2023-08-19 15:30:00');
+('AMP-001', 'nurhasanah@gmail.com',        '2023-03-10 09:15:00'),
+('AMP-001', 'dewi.lestari@gmail.com',      '2023-06-22 14:30:00'),
+('AMP-001', 'tiara.anggraini@gmail.com',   '2024-01-15 10:00:00'),
+('AMP-001', 'nadia.safitri@gmail.com',     '2024-02-20 16:45:00'),
+('AMP-002', 'budi.santoso@gmail.com',      '2022-05-18 11:00:00'),
+('AMP-002', 'fitri.handayani@gmail.com',   '2023-09-05 13:20:00'),
+('AMP-002', 'ayu.maharani@gmail.com',      '2023-10-11 08:45:00'),
+('AMP-002', 'lina.oktavia@gmail.com',      '2024-03-30 15:10:00'),
+('AMP-003', 'ahmad.fauzi@yahoo.com',       '2022-08-07 10:30:00'),
+('AMP-003', 'kevin.tan@gmail.com',         '2022-12-25 19:00:00'),
+('AMP-003', 'andre.setiawan@gmail.com',    '2023-04-14 12:15:00'),
+('AMP-003', 'galih.saputra@gmail.com',     '2023-11-03 17:30:00'),
+('AMP-004', 'dr.hendra@gmail.com',        '2021-07-20 09:00:00'),
+('AMP-004', 'bambang.irawan@gmail.com',   '2022-02-14 11:30:00'),
+('AMP-004', 'rudi.hartono@gmail.com',     '2022-10-08 14:00:00'),
+('AMP-004', 'teguh.wibowo@gmail.com',     '2023-05-25 16:20:00'),
+('AMP-005', 'dr.anita@yahoo.com',         '2020-09-01 08:00:00'),
+('AMP-005', 'dr.baskoro@gmail.com',       '2021-03-17 10:45:00'),
+('AMP-005', 'sri.mulyani@gmail.com',      '2022-07-04 13:00:00'),
+('AMP-005', 'dr.arief@gmail.com',         '2023-08-19 15:30:00');
 
 INSERT INTO claim_missing_miles (email_member, email_staf, maskapai, bandara_asal, bandara_tujuan, tanggal_penerbangan, flight_number, nomor_tiket, kelas_kabin, pnr, status_penerimaan, timestamp) VALUES
 ('budi.santoso@gmail.com',     'james.lee@gmail.com',        'GA', 'CGK', 'DPS', '2024-01-10', 'GA401',  'TKT20240110001', 'Economy',  'PNR10001', 'Disetujui', '2024-01-15 09:00:00'),
@@ -406,36 +416,36 @@ INSERT INTO transfer (email_member_1, email_member_2, timestamp, jumlah, catatan
 ('agus.kurniawan@gmail.com',  'irfan.hakim@gmail.com',      '2024-04-22 13:15:00',  800,  'Bantu miles teman'),
 ('daniel.park@gmail.com',     'michiko.tanaka@gmail.com',   '2024-05-30 10:00:00', 4500,  'Transfer sesama member Asia');
 
-INSERT INTO hadiah (kode_hadiah, nama, miles, deskripsi, valid_start_date, program_end, id_penyedia) VALUES
-('HDH-GA01',  'Upgrade Kelas Bisnis Garuda',          15000, 'Upgrade satu kali penerbangan ke kelas bisnis Garuda Indonesia',          '2024-01-01', '2024-12-31', 1),
-('HDH-GA02',  'Diskon 20% Tiket Garuda',               8000, 'Voucher diskon 20% untuk pembelian tiket Garuda Indonesia',               '2024-01-01', '2024-12-31', 1),
-('HDH-JT01',  'Tiket Gratis Lion Air Domestik',        12000, 'Satu tiket gratis rute domestik Lion Air kelas ekonomi',                  '2024-01-01', '2024-12-31', 2),
-('HDH-QZ01',  'Tiket Gratis AirAsia Rute ASEAN',       10000, 'Satu tiket gratis rute ASEAN AirAsia Indonesia',                         '2024-03-01', '2024-12-31', 3),
-('HDH-SJ01',  'Diskon 15% Tiket Sriwijaya Air',         5000, 'Voucher diskon 15% untuk pembelian tiket Sriwijaya Air',                  '2024-01-01', '2024-09-30', 4),
-('HDH-HM01',  'Menginap 1 Malam Hotel Mulia',          20000, 'Gratis menginap satu malam di Hotel Mulia Jakarta (kamar Deluxe)',        '2024-01-01', '2024-12-31', 6),
-('HDH-TV01',  'Voucher Traveloka Rp200.000',            6000, 'Voucher Traveloka senilai Rp200.000 untuk pemesanan hotel atau tiket',    '2024-02-01', '2024-12-31', 7),
-('HDH-HZ01',  'Sewa Mobil Hertz 1 Hari',               9000, 'Gratis sewa mobil Hertz Indonesia selama satu hari (maks. 200 km)',       '2024-01-01', '2024-10-31', 8),
-('HDH-TK01',  'Voucher Tiket.com Rp150.000',            4000, 'Voucher Tiket.com senilai Rp150.000 untuk pemesanan wisata atau hotel',   '2024-03-01', '2024-12-31', 9),
-('HDH-BB01',  'Voucher Taksi Blue Bird 5 Perjalanan',   3000, 'Voucher gratis 5 perjalanan taksi Blue Bird maksimal Rp80.000 per trip',  '2024-01-01', '2024-12-31', 10);
+INSERT INTO hadiah (nama, miles, deskripsi, valid_start_date, program_end, id_penyedia) VALUES
+('Upgrade Kelas Bisnis Garuda',          15000, 'Upgrade satu kali penerbangan ke kelas bisnis Garuda Indonesia',          '2024-01-01', '2024-12-31', 1),
+('Diskon 20% Tiket Garuda',               8000, 'Voucher diskon 20% untuk pembelian tiket Garuda Indonesia',               '2024-01-01', '2024-12-31', 1),
+('Tiket Gratis Lion Air Domestik',        12000, 'Satu tiket gratis rute domestik Lion Air kelas ekonomi',                  '2024-01-01', '2024-12-31', 2),
+('Tiket Gratis AirAsia Rute ASEAN',       10000, 'Satu tiket gratis rute ASEAN AirAsia Indonesia',                         '2024-03-01', '2024-12-31', 3),
+('Diskon 15% Tiket Sriwijaya Air',         5000, 'Voucher diskon 15% untuk pembelian tiket Sriwijaya Air',                  '2024-01-01', '2024-09-30', 4),
+('Menginap 1 Malam Hotel Mulia',          20000, 'Gratis menginap satu malam di Hotel Mulia Jakarta (kamar Deluxe)',        '2024-01-01', '2024-12-31', 6),
+('Voucher Traveloka Rp200.000',            6000, 'Voucher Traveloka senilai Rp200.000 untuk pemesanan hotel atau tiket',    '2024-02-01', '2024-12-31', 7),
+('Sewa Mobil Hertz 1 Hari',               9000, 'Gratis sewa mobil Hertz Indonesia selama satu hari (maks. 200 km)',       '2024-01-01', '2024-10-31', 8),
+('Voucher Tiket.com Rp150.000',            4000, 'Voucher Tiket.com senilai Rp150.000 untuk pemesanan wisata atau hotel',   '2024-03-01', '2024-12-31', 9),
+('Voucher Taksi Blue Bird 5 Perjalanan',   3000, 'Voucher gratis 5 perjalanan taksi Blue Bird maksimal Rp80.000 per trip',  '2024-01-01', '2024-12-31', 10);
 
 INSERT INTO redeem (email_member, kode_hadiah, timestamp) VALUES
-('dr.anita@yahoo.com',         'HDH-GA01',  '2024-01-20 10:00:00'),
-('dr.baskoro@gmail.com',       'HDH-GA01',  '2024-02-05 14:30:00'),
-('sri.mulyani@gmail.com',      'HDH-GA02',  '2024-01-25 09:15:00'),
-('dr.sinta@gmail.com',         'HDH-GA02',  '2024-03-10 11:00:00'),
-('dr.arief@gmail.com',         'HDH-JT01',  '2024-02-14 13:45:00'),
-('dr.maya@yahoo.com',          'HDH-JT01',  '2024-03-22 16:20:00'),
-('yusuf.pratama@gmail.com',    'HDH-QZ01',  '2024-04-01 08:30:00'),
-('maria.susanti@gmail.com',    'HDH-QZ01',  '2024-04-15 10:15:00'),
-('bambang.irawan@gmail.com',   'HDH-SJ01',  '2024-02-28 15:00:00'),
-('teguh.wibowo@gmail.com',     'HDH-SJ01',  '2024-04-20 09:45:00'),
-('dr.wahyu@gmail.com',         'HDH-HM01',  '2024-01-30 12:00:00'),
-('ratna.dewi@gmail.com',       'HDH-HM01',  '2024-03-05 14:00:00'),
-('dr.hendra@gmail.com',        'HDH-TV01',  '2024-02-10 10:30:00'),
-('rudi.hartono@gmail.com',     'HDH-TV01',  '2024-04-08 11:45:00'),
-('galih.saputra@gmail.com',    'HDH-HZ01',  '2024-03-18 13:00:00'),
-('dodi.hermawan@gmail.com',    'HDH-HZ01',  '2024-05-02 09:00:00'),
-('agus.kurniawan@gmail.com',   'HDH-TK01',  '2024-03-25 15:30:00'),
-('fajar.ramadhan@gmail.com',   'HDH-TK01',  '2024-04-30 10:00:00'),
-('kevin.tan@gmail.com',        'HDH-BB01',  '2024-04-10 08:15:00'),
-('andre.setiawan@gmail.com',   'HDH-BB01',  '2024-05-15 16:00:00');
+('dr.anita@yahoo.com',         'RWD-001',  '2024-01-20 10:00:00'),
+('dr.baskoro@gmail.com',       'RWD-001',  '2024-02-05 14:30:00'),
+('sri.mulyani@gmail.com',      'RWD-002',  '2024-01-25 09:15:00'),
+('dr.sinta@gmail.com',         'RWD-002',  '2024-03-10 11:00:00'),
+('dr.arief@gmail.com',         'RWD-003',  '2024-02-14 13:45:00'),
+('dr.maya@yahoo.com',          'RWD-003',  '2024-03-22 16:20:00'),
+('yusuf.pratama@gmail.com',    'RWD-004',  '2024-04-01 08:30:00'),
+('maria.susanti@gmail.com',    'RWD-004',  '2024-04-15 10:15:00'),
+('bambang.irawan@gmail.com',   'RWD-005',  '2024-02-28 15:00:00'),
+('teguh.wibowo@gmail.com',     'RWD-005',  '2024-04-20 09:45:00'),
+('dr.wahyu@gmail.com',         'RWD-006',  '2024-01-30 12:00:00'),
+('ratna.dewi@gmail.com',       'RWD-006',  '2024-03-05 14:00:00'),
+('dr.hendra@gmail.com',        'RWD-007',  '2024-02-10 10:30:00'),
+('rudi.hartono@gmail.com',     'RWD-007',  '2024-04-08 11:45:00'),
+('galih.saputra@gmail.com',    'RWD-008',  '2024-03-18 13:00:00'),
+('dodi.hermawan@gmail.com',    'RWD-008',  '2024-05-02 09:00:00'),
+('agus.kurniawan@gmail.com',   'RWD-009',  '2024-03-25 15:30:00'),
+('fajar.ramadhan@gmail.com',   'RWD-009',  '2024-04-30 10:00:00'),
+('kevin.tan@gmail.com',        'RWD-010',  '2024-04-10 08:15:00'),
+('andre.setiawan@gmail.com',   'RWD-010',  '2024-05-15 16:00:00');
