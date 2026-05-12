@@ -1,31 +1,33 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { users } from "../data/dummydata";
+import { loginUser } from "@/app/actions/auth";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
-    const foundUser = users.find(
-      (u) => u.email === email && u.password === password
-    );
-
-    if (!foundUser) {
-      setError("Email atau password salah");
+    if (!email || !password) {
+      setError("Email dan password wajib diisi.");
       return;
     }
 
-    localStorage.setItem("user", JSON.stringify(foundUser));
-    if (foundUser.role === "staff") {
+    setLoading(true);
+    const result = await loginUser({ email, password });
+    setLoading(false);
+
+    if (result.success) {
+      localStorage.setItem("user", JSON.stringify(result.user));
       router.push("/fitur_wajib/dashboard");
     } else {
-      router.push("/fitur_wajib/dashboard");
+      setError(result.message);
     }
   };
 
@@ -37,28 +39,19 @@ export default function LoginPage() {
             ✈
           </div>
 
-          <h1 className="mt-4 text-2xl font-semibold">
-            Selamat Datang
-          </h1>
-          <p className="text-gray-500 mb-6">
-            Masuk ke akun AeroMiles Anda
-          </p>
+          <h1 className="mt-4 text-2xl font-semibold">Selamat Datang</h1>
+          <p className="text-gray-500 mb-6">Masuk ke akun AeroMiles Anda</p>
 
           <form
             onSubmit={handleLogin}
             className="bg-white p-6 rounded-xl shadow-md w-[350px] text-left"
           >
-            <h2 className="font-semibold mb-1">Login</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              Coba:
-              <br />
-              admin@aero.com / 123456 (Staff)
-              <br />
-              john@example.com / 123456 (Member)
-            </p>
+            <h2 className="font-semibold mb-4">Login</h2>
 
             {error && (
-              <p className="text-red-500 text-sm mb-2">{error}</p>
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                {error}
+              </div>
             )}
 
             <label className="text-sm">Email</label>
@@ -79,9 +72,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full bg-[var(--color-primary)] text-white py-2 rounded-md hover:bg-[var(--color-primary-dark)]"
+              disabled={loading}
+              className="w-full bg-[var(--color-primary)] text-white py-2 rounded-md hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
             >
-              Log In
+              {loading ? "Masuk..." : "Log In"}
             </button>
           </form>
         </div>
