@@ -28,7 +28,13 @@ function rowToMember(row: any): Member {
         tier: row.tier,
         total: row.total,
         award: row.award,
-        join: row.join?.toString().split("T")[0] ?? "-",
+        join: row.join
+            ? new Date(row.join).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })
+            : "-",
         salutation: row.salutation,
         first_mid_name: row.first_mid_name,
         last_name: row.last_name,
