@@ -270,32 +270,6 @@ export async function getDashboardData(email: string, role: "member" | "staff") 
     client.release();
   }
 }
-export async function getAllMembers() {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(
-      `SELECT 
-        m.nomor_member AS id,
-        m.tanggal_bergabung AS join,
-        m.award_miles AS award,
-        m.total_miles AS total,
-        t.nama AS tier,
-        p.salutation,
-        p.first_mid_name,
-        p.last_name,
-        p.email
-       FROM member m
-       JOIN pengguna p ON LOWER(p.email) = LOWER(m.email)
-       JOIN tier t ON t.id_tier = m.id_tier
-       ORDER BY m.tanggal_bergabung DESC`
-    );
-    return { success: true, data: result.rows };
-  } catch (err: any) {
-    return { success: false, message: err.message };
-  } finally {
-    client.release();
-  }
-}
 export async function updateMember(email: string, data: {
   salutation: string;
   first_mid_name: string;
@@ -343,6 +317,7 @@ export async function updateMember(email: string, data: {
 export async function deleteMember(email: string) {
   const client = await pool.connect();
   try {
+
     await client.query(
       `DELETE FROM pengguna WHERE LOWER(email) = LOWER($1)`,
       [email]
@@ -350,6 +325,47 @@ export async function deleteMember(email: string) {
     return { success: true };
   } catch (err: any) {
     return { success: false, message: err.message };
+  } finally {
+    client.release();
+  }
+}
+export async function getAllMembers(): Promise<
+  { success: true; data: any[] } |
+  { success: false; message: string }
+> {
+  const client = await pool.connect();
+
+  try {
+    const result = await client.query(`
+      SELECT
+        m.nomor_member AS id,
+        m.tanggal_bergabung AS join,
+        m.award_miles AS award,
+        m.total_miles AS total,
+        t.nama AS tier,
+        p.salutation,
+        p.first_mid_name,
+        p.last_name,
+        p.email,
+        p.kewarganegaraan,
+        p.country_code,
+        p.mobile_number,
+        p.tanggal_lahir
+      FROM member m
+      JOIN pengguna p ON LOWER(p.email) = LOWER(m.email)
+      JOIN tier t ON t.id_tier = m.id_tier
+      ORDER BY m.tanggal_bergabung DESC
+    `);
+
+    return {
+      success: true,
+      data: result.rows,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err.message,
+    };
   } finally {
     client.release();
   }
