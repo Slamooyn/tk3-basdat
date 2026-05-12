@@ -229,10 +229,6 @@ export default function Page() {
                                 <input defaultValue="John" className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm shadow-sm" />
                             </div>
                             <div>
-                                <label className="text-sm text-gray-600 block mb-1">Nama Tengah</label>
-                                <input defaultValue="William" className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm shadow-sm" />
-                            </div>
-                            <div>
                                 <label className="text-sm text-gray-600 block mb-1">Nama Belakang</label>
                                 <input defaultValue="Doe" className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm shadow-sm" />
                             </div>
@@ -315,14 +311,6 @@ export default function Page() {
                                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm shadow-sm"
                                 />
                             </div>
-                            <div>
-                                <label className="text-sm text-gray-600 block mb-1">Nama Tengah <span className="text-gray-400">(opsional)</span></label>
-                                <input
-                                    value={addForm.namaTengah}
-                                    onChange={(e) => field("namaTengah", e.target.value)}
-                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm shadow-sm"
-                                />
-                            </div>
 
                             <div>
                                 <label className="text-sm text-gray-600 block mb-1">Nama Belakang</label>
@@ -395,8 +383,6 @@ export default function Page() {
                     </div>
                 </div>
             )}
-
-            {/* ── MODAL DELETE ── */}
             {showDelete && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
                     <div className="bg-white w-[520px] rounded-2xl p-6 shadow-xl">

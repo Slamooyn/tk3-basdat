@@ -270,3 +270,87 @@ export async function getDashboardData(email: string, role: "member" | "staff") 
     client.release();
   }
 }
+export async function getAllMembers() {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `SELECT 
+        m.nomor_member AS id,
+        m.tanggal_bergabung AS join,
+        m.award_miles AS award,
+        m.total_miles AS total,
+        t.nama AS tier,
+        p.salutation,
+        p.first_mid_name,
+        p.last_name,
+        p.email
+       FROM member m
+       JOIN pengguna p ON LOWER(p.email) = LOWER(m.email)
+       JOIN tier t ON t.id_tier = m.id_tier
+       ORDER BY m.tanggal_bergabung DESC`
+    );
+    return { success: true, data: result.rows };
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  } finally {
+    client.release();
+  }
+}
+export async function updateMember(email: string, data: {
+  salutation: string;
+  first_mid_name: string;
+  last_name: string;
+  kewarganegaraan: string;
+  country_code: string;
+  mobile_number: string;
+  tanggal_lahir: string;
+  id_tier: string;
+}) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `UPDATE pengguna SET
+        salutation = $1,
+        first_mid_name = $2,
+        last_name = $3,
+        kewarganegaraan = $4,
+        country_code = $5,
+        mobile_number = $6,
+        tanggal_lahir = $7
+       WHERE LOWER(email) = LOWER($8)`,
+      [data.salutation, data.first_mid_name, data.last_name,
+       data.kewarganegaraan, data.country_code, data.mobile_number,
+       data.tanggal_lahir, email]
+    );
+
+    await client.query(
+      `UPDATE member SET id_tier = $1 WHERE LOWER(email) = LOWER($2)`,
+      [data.id_tier, email]
+    );
+
+    await client.query("COMMIT");
+    return { success: true };
+  } catch (err: any) {
+    await client.query("ROLLBACK");
+    return { success: false, message: err.message };
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteMember(email: string) {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `DELETE FROM pengguna WHERE LOWER(email) = LOWER($1)`,
+      [email]
+    );
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  } finally {
+    client.release();
+  }
+}
