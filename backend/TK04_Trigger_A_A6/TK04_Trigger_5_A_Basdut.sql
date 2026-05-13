@@ -34,7 +34,6 @@ EXECUTE FUNCTION sync_miles_after_klaim_disetujui();
 
 -- TRIGGER 5.2
 -- Stored Procedure Pemeringkatan Top 5 Member berdasarkan Total Miles
-
 CREATE OR REPLACE FUNCTION get_top5_member_by_total_miles()
 RETURNS TABLE (
     rank BIGINT,
