@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { FiSearch, FiEdit, FiTrash2 } from "react-icons/fi";
 import { registerUser, getAllMembers, updateMember, deleteMember } from "@/app/actions/auth";
+
 type Member = {
     id: string;
     name: string;
@@ -76,6 +77,8 @@ type EditForm = {
 export default function Page() {
     const [members, setMembers] = useState<Member[]>([]);
     const [loadingMembers, setLoadingMembers] = useState(true);
+    const [search, setSearch] = useState("");
+    const [filterTier, setFilterTier] = useState("Semua Tier");
 
     // Add
     const [showAdd, setShowAdd] = useState(false);
@@ -94,6 +97,18 @@ export default function Page() {
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; email: string } | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
+    const filteredMembers = members.filter((m) => {
+        const q = search.toLowerCase();
+        const matchSearch =
+            !q ||
+            m.name.toLowerCase().includes(q) ||
+            m.email.toLowerCase().includes(q) ||
+            m.mobile_number.toLowerCase().includes(q) ||
+            m.id.toLowerCase().includes(q);
+        const matchTier = filterTier === "Semua Tier" || m.tier === filterTier;
+        return matchSearch && matchTier;
+    });
+
     useEffect(() => {
         getAllMembers().then((res) => {
             if (res.success) setMembers(res.data.map(rowToMember));
@@ -106,7 +121,6 @@ export default function Page() {
         if (res.success) setMembers(res.data.map(rowToMember));
     };
 
-    // ── Handler Add ──────────────────────────────────────────────────
     const handleTambahMember = async () => {
         setAddError("");
         if (!addForm.email || !addForm.password || !addForm.namaDepan || !addForm.last_name || !addForm.tanggal_lahir || !addForm.mobile_number) {
@@ -131,7 +145,6 @@ export default function Page() {
         setShowAdd(false);
     };
 
-    // ── Handler Edit ─────────────────────────────────────────────────
     const openEdit = (m: Member) => {
         const parts = m.first_mid_name.trim().split(" ");
         setEditForm({
@@ -175,7 +188,6 @@ export default function Page() {
         setShowEdit(false);
     };
 
-    // ── Handler Delete ───────────────────────────────────────────────
     const handleDeleteMember = async () => {
         if (!deleteTarget) return;
         setDeleteLoading(true);
@@ -202,7 +214,6 @@ export default function Page() {
 
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
-            {/* HEADER */}
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-xl font-semibold">Kelola Member</h1>
                 <button
@@ -216,14 +227,25 @@ export default function Page() {
             <div className="flex gap-3 mb-4">
                 <div className="flex items-center bg-white border rounded-lg px-3 py-2 w-full shadow-sm">
                     <FiSearch className="text-gray-400 mr-2" />
-                    <input placeholder="Cari nama, email, atau nomor member..." className="w-full outline-none text-sm" />
+                    <input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Cari nama, email, nomor HP, atau nomor member..."
+                        className="w-full outline-none text-sm"
+                    />
                 </div>
-                <select className="bg-white border rounded-lg px-4 py-2 text-sm shadow-sm">
+                <select
+                    value={filterTier}
+                    onChange={(e) => setFilterTier(e.target.value)}
+                    className="bg-white border rounded-lg px-4 py-2 text-sm shadow-sm"
+                >
                     <option>Semua Tier</option>
+                    <option>Gold</option>
+                    <option>Silver</option>
+                    <option>Blue</option>
                 </select>
             </div>
 
-            {/* TABLE */}
             <div className="bg-white rounded-xl shadow border">
                 <table className="w-full text-sm">
                     <thead className="text-gray-500 border-b">
@@ -241,9 +263,11 @@ export default function Page() {
                     <tbody>
                         {loadingMembers ? (
                             <tr><td colSpan={8} className="p-8 text-center text-gray-400">Memuat data...</td></tr>
-                        ) : members.length === 0 ? (
-                            <tr><td colSpan={8} className="p-8 text-center text-gray-400">Belum ada member terdaftar.</td></tr>
-                        ) : members.map((m, i) => (
+                        ) : filteredMembers.length === 0 ? (
+                            <tr><td colSpan={8} className="p-8 text-center text-gray-400">
+                                {members.length === 0 ? "Belum ada member terdaftar." : "Tidak ada member yang cocok."}
+                            </td></tr>
+                        ) : filteredMembers.map((m, i) => (
                             <tr key={i} className="border-t hover:bg-gray-50">
                                 <td className="p-4 font-medium">{m.id}</td>
                                 <td className="p-4">{m.name}</td>
@@ -262,8 +286,6 @@ export default function Page() {
                     </tbody>
                 </table>
             </div>
-
-            {/* ── MODAL EDIT ── */}
             {showEdit && editForm && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white w-[720px] rounded-2xl p-8 relative shadow-xl">
@@ -384,8 +406,6 @@ export default function Page() {
                     </div>
                 </div>
             )}
-
-            {/* ── MODAL DELETE ── */}
             {showDelete && deleteTarget && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white w-[520px] rounded-2xl p-6 shadow-xl">
