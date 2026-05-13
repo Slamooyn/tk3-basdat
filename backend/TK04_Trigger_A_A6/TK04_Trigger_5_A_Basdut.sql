@@ -1,53 +1,69 @@
-CREATE OR REPLACE FUNCTION check_duplicate_email()
+-- TRIGGER 5.1
+-- Sinkronisasi Total Miles Member setelah
+-- Klaim Missing Miles Disetujui
+
+-- Function untuk trigger
+CREATE OR REPLACE FUNCTION sync_miles_after_klaim_disetujui()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF EXISTS (
-        SELECT 1 FROM pengguna 
-        WHERE LOWER(email) = LOWER(NEW.email)
-    ) THEN
-        RAISE EXCEPTION 'ERROR: Email "%" sudah terdaftar, silakan gunakan email lain.', NEW.email;
+    -- Cek apakah status berubah menjadi 'Disetujui'
+    IF NEW.status_penerimaan = 'Disetujui' AND OLD.status_penerimaan != 'Disetujui' THEN
+        -- Update award_miles dan total_miles member
+        UPDATE member
+        SET 
+            award_miles = award_miles + 1000,
+            total_miles = total_miles + 1000
+        WHERE email = NEW.email_member;
+
+        -- Return pesan sukses
+        RAISE NOTICE 'SUKSES: Total miles Member "%" telah diperbarui. Miles ditambahkan: 1000 miles dari klaim penerbangan "%".',
+            NEW.email_member,
+            NEW.flight_number;
     END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER trg_check_duplicate_email
-BEFORE INSERT ON pengguna
+-- Buat trigger pada tabel claim_missing_miles
+CREATE OR REPLACE TRIGGER trigger_sync_miles_klaim
+AFTER UPDATE ON claim_missing_miles
 FOR EACH ROW
-EXECUTE FUNCTION check_duplicate_email();
+EXECUTE FUNCTION sync_miles_after_klaim_disetujui();
 
-CREATE OR REPLACE FUNCTION verify_login(
-    p_email VARCHAR,
-    p_password VARCHAR
-)
-RETURNS TABLE(
+
+-- TRIGGER 5.2
+-- Stored Procedure Pemeringkatan Top 5 Member berdasarkan Total Miles
+CREATE OR REPLACE FUNCTION get_top5_member_by_total_miles()
+RETURNS TABLE (
+    rank BIGINT,
     email VARCHAR,
-    salutation VARCHAR,
-    first_mid_name VARCHAR,
-    last_name VARCHAR,
-    is_member BOOLEAN,
-    is_staf BOOLEAN
+    total_miles INT
 ) AS $$
 DECLARE
-    v_stored_password VARCHAR;
+    top_email VARCHAR;
+    top_total_miles INT;
 BEGIN
-    SELECT p.password INTO v_stored_password
-    FROM pengguna p
-    WHERE LOWER(p.email) = LOWER(p_email);
+    -- Ambil peringkat 1 untuk pesan sukses
+    SELECT m.email, m.total_miles
+    INTO top_email, top_total_miles
+    FROM member m
+    ORDER BY m.total_miles DESC
+    LIMIT 1;
 
-    IF v_stored_password IS NULL OR v_stored_password <> p_password THEN
-        RAISE EXCEPTION 'Email atau password salah, silakan coba lagi.';
-    END IF;
+    -- Return pesan sukses
+    RAISE NOTICE 'SUKSES: Daftar Top 5 Member berdasarkan total miles berhasil diperbarui, dengan peringkat pertama "%" memiliki % miles.',
+        top_email,
+        top_total_miles;
 
+    -- Return hasil top 5
     RETURN QUERY
     SELECT 
-        p.email::VARCHAR,
-        p.salutation::VARCHAR,
-        p.first_mid_name::VARCHAR,
-        p.last_name::VARCHAR,
-        EXISTS(SELECT 1 FROM member m WHERE LOWER(m.email) = LOWER(p_email))::BOOLEAN,
-        EXISTS(SELECT 1 FROM staf s WHERE LOWER(s.email) = LOWER(p_email))::BOOLEAN
-    FROM pengguna p
-    WHERE LOWER(p.email) = LOWER(p_email);
+        ROW_NUMBER() OVER (ORDER BY m.total_miles DESC) AS rank,
+        m.email,
+        m.total_miles
+    FROM member m
+    ORDER BY m.total_miles DESC
+    LIMIT 5;
 END;
 $$ LANGUAGE plpgsql;

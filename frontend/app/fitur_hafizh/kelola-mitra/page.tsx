@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getMitra, tambahMitra, updateMitra, hapusMitra } from "@/app/actions/mitra";
 
 type Mitra = {
   email_mitra: string;
@@ -9,20 +10,13 @@ type Mitra = {
   tanggal_kerja_sama: string;
 };
 
-const initialMitra: Mitra[] = [
-  { email_mitra: "partner@traveloka.com", id_penyedia: 1, nama_mitra: "TravelokaPartner", tanggal_kerja_sama: "2023-01-15" },
-  { email_mitra: "partner@plazapremium.com", id_penyedia: 2, nama_mitra: "Plaza Premium", tanggal_kerja_sama: "2023-06-01" },
-  { email_mitra: "partner@lionair.co.id", id_penyedia: 3, nama_mitra: "Lion Air Partner", tanggal_kerja_sama: "2023-08-20" },
-  { email_mitra: "partner@citilink.co.id", id_penyedia: 4, nama_mitra: "Citilink Partner", tanggal_kerja_sama: "2024-01-10" },
-  { email_mitra: "partner@airasia.com", id_penyedia: 5, nama_mitra: "AirAsia Partner", tanggal_kerja_sama: "2024-03-05" },
-];
-
 export default function KelolaMitra() {
-  const [mitraList, setMitraList] = useState<Mitra[]>(initialMitra);
+  const [mitraList, setMitraList] = useState<Mitra[]>([]);
   const [showTambah, setShowTambah] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showHapus, setShowHapus] = useState(false);
   const [selectedMitra, setSelectedMitra] = useState<Mitra | null>(null);
+  const [pesan, setPesan] = useState("");
 
   const [form, setForm] = useState({
     email_mitra: "",
@@ -30,50 +24,60 @@ export default function KelolaMitra() {
     tanggal_kerja_sama: "",
   });
 
-  const generateIdPenyedia = () => {
-    const lastId = mitraList[mitraList.length - 1]?.id_penyedia || 0;
-    return lastId + 1;
-  };
+  // Fetch data saat halaman dimuat
+  useEffect(() => {
+    fetchMitra();
+  }, []);
 
-  const handleTambah = () => {
+  async function fetchMitra() {
+    const res = await getMitra();
+    if (res.success && res.data) setMitraList(res.data);
+  }
+
+  async function handleTambah() {
     if (!form.email_mitra || !form.nama_mitra || !form.tanggal_kerja_sama) {
-      alert("Harap isi semua field yang wajib!");
+      setPesan("Harap isi semua field yang wajib!");
       return;
     }
-    if (mitraList.find((m) => m.email_mitra === form.email_mitra)) {
-      alert("Email mitra sudah terdaftar!");
-      return;
-    }
-    const newMitra: Mitra = {
+    const res = await tambahMitra({
       email_mitra: form.email_mitra,
-      id_penyedia: generateIdPenyedia(),
       nama_mitra: form.nama_mitra,
       tanggal_kerja_sama: form.tanggal_kerja_sama,
-    };
-    setMitraList([...mitraList, newMitra]);
-    setShowTambah(false);
-    setForm({ email_mitra: "", nama_mitra: "", tanggal_kerja_sama: "" });
-  };
+    });
+    setPesan(res.message || "");
+    if (res.success) {
+      setShowTambah(false);
+      setForm({ email_mitra: "", nama_mitra: "", tanggal_kerja_sama: "" });
+      fetchMitra();
+    }
+  }
 
-  const handleEdit = () => {
+  async function handleEdit() {
     if (!selectedMitra) return;
     if (!form.nama_mitra || !form.tanggal_kerja_sama) {
-      alert("Harap isi semua field!");
+      setPesan("Harap isi semua field!");
       return;
     }
-    setMitraList(mitraList.map((m) =>
-      m.email_mitra === selectedMitra.email_mitra
-        ? { ...m, nama_mitra: form.nama_mitra, tanggal_kerja_sama: form.tanggal_kerja_sama }
-        : m
-    ));
-    setShowEdit(false);
-  };
+    const res = await updateMitra(selectedMitra.email_mitra, {
+      nama_mitra: form.nama_mitra,
+      tanggal_kerja_sama: form.tanggal_kerja_sama,
+    });
+    setPesan(res.message || "");
+    if (res.success) {
+      setShowEdit(false);
+      fetchMitra();
+    }
+  }
 
-  const handleHapus = () => {
+  async function handleHapus() {
     if (!selectedMitra) return;
-    setMitraList(mitraList.filter((m) => m.email_mitra !== selectedMitra.email_mitra));
-    setShowHapus(false);
-  };
+    const res = await hapusMitra(selectedMitra.email_mitra);
+    setPesan(res.message || "");
+    if (res.success) {
+      setShowHapus(false);
+      fetchMitra();
+    }
+  }
 
   const openEdit = (m: Mitra) => {
     setSelectedMitra(m);
@@ -97,10 +101,18 @@ export default function KelolaMitra() {
         <p className="text-sm text-gray-500">Masuk sebagai Mr. Admin Aero - Staf</p>
       </div>
 
+      {/* Pesan sukses/error */}
+      {pesan && (
+        <div className={`mb-4 px-4 py-3 rounded text-sm font-medium ${pesan.includes("berhasil") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+          {pesan}
+          <button onClick={() => setPesan("")} className="ml-4 font-bold">✕</button>
+        </div>
+      )}
+
       {/* Tombol Tambah */}
       <div className="flex justify-end mb-4">
         <button
-          onClick={() => { setShowTambah(true); setForm({ email_mitra: "", nama_mitra: "", tanggal_kerja_sama: "" }); }}
+          onClick={() => { setShowTambah(true); setForm({ email_mitra: "", nama_mitra: "", tanggal_kerja_sama: "" }); setPesan(""); }}
           className="bg-[#1a2e4a] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#243d61]"
         >
           + Tambah Mitra
