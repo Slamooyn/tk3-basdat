@@ -1,6 +1,5 @@
 -- TRIGGER 5.1
--- Sinkronisasi Total Miles Member setelah
--- Klaim Missing Miles Disetujui
+-- Sinkronisasi Total Miles Member setelah Klaim Missing Miles Disetujui
 
 -- Function untuk trigger
 CREATE OR REPLACE FUNCTION sync_miles_after_klaim_disetujui()
@@ -59,9 +58,7 @@ BEGIN
     -- Return hasil top 5
     RETURN QUERY
     SELECT 
-        ROW_NUMBER() OVER (ORDER BY m.total_miles DESC) AS rank,
-        m.email,
-        m.total_miles
+        ROW_NUMBER() OVER (ORDER BY m.total_miles DESC) AS rank, m.email, m.total_miles
     FROM member m
     ORDER BY m.total_miles DESC
     LIMIT 5;
