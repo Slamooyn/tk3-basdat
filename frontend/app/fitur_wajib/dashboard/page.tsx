@@ -5,6 +5,7 @@ import { getDashboardData } from "@/app/actions/auth";
 import { FiUser, FiAward, FiRepeat, FiClock, FiCheckCircle, FiXCircle, FiUsers } from "react-icons/fi";
 import { FaPlaneDeparture } from "react-icons/fa";
 
+
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [data, setData] = useState<any>(null);
