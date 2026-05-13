@@ -33,7 +33,7 @@ function rowToMember(row: any): Member {
                 year: "numeric",
                 month: "short",
                 day: "numeric",
-              })
+            })
             : "-",
         salutation: row.salutation,
         first_mid_name: row.first_mid_name,
@@ -41,7 +41,9 @@ function rowToMember(row: any): Member {
         kewarganegaraan: row.kewarganegaraan,
         country_code: row.country_code,
         mobile_number: row.mobile_number,
-        tanggal_lahir: row.tanggal_lahir?.toString().split("T")[0] ?? "",
+        tanggal_lahir: row.tanggal_lahir
+            ? new Date(row.tanggal_lahir).toISOString().split("T")[0]
+            : "",
     };
 }
 
@@ -141,7 +143,9 @@ export default function Page() {
             kewarganegaraan: m.kewarganegaraan,
             country_code: m.country_code,
             mobile_number: m.mobile_number,
-            tanggal_lahir: m.tanggal_lahir,
+            tanggal_lahir: m.tanggal_lahir
+                ? new Date(m.tanggal_lahir).toISOString().split("T")[0]
+                : "",
             tier: TIER_MAP[m.tier] ?? "TIER-BLU",
         });
         setEditError("");
@@ -277,10 +281,6 @@ export default function Page() {
                                 <input value={editForm.namaDepan} onChange={(e) => fieldEdit("namaDepan", e.target.value)} className={inputCls} />
                             </div>
                             <div>
-                                <label className="text-sm text-gray-600 block mb-1">Nama Tengah <span className="text-gray-400">(opsional)</span></label>
-                                <input value={editForm.namaTengah} onChange={(e) => fieldEdit("namaTengah", e.target.value)} className={inputCls} />
-                            </div>
-                            <div>
                                 <label className="text-sm text-gray-600 block mb-1">Nama Belakang</label>
                                 <input value={editForm.last_name} onChange={(e) => fieldEdit("last_name", e.target.value)} className={inputCls} />
                             </div>
@@ -348,10 +348,6 @@ export default function Page() {
                             <div>
                                 <label className="text-sm text-gray-600 block mb-1">Nama Depan</label>
                                 <input value={addForm.namaDepan} onChange={(e) => fieldAdd("namaDepan", e.target.value)} className={inputCls} />
-                            </div>
-                            <div>
-                                <label className="text-sm text-gray-600 block mb-1">Nama Tengah <span className="text-gray-400">(opsional)</span></label>
-                                <input value={addForm.namaTengah} onChange={(e) => fieldAdd("namaTengah", e.target.value)} className={inputCls} />
                             </div>
                             <div>
                                 <label className="text-sm text-gray-600 block mb-1">Nama Belakang</label>
