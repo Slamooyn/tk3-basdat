@@ -170,3 +170,18 @@ export async function hapusHadiah(kode_hadiah: string) {
     client.release();
   }
 }
+
+// GET top 5 member berdasarkan total miles (stored procedure)
+export async function getTop5Member() {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT * FROM get_top5_member_by_total_miles()
+    `);
+    return { success: true, data: result.rows };
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  } finally {
+    client.release();
+  }
+}
