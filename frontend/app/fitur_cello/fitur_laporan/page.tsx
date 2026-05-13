@@ -1,51 +1,36 @@
 "use client";
 
-import { useState } from "react";
-
-const dummyStaf = {
-  email: "admin@aeromiles.com",
-  nama: "Mr. Admin Aero",
-  id_staf: "S0001",
-};
+import { useState, useEffect } from "react";
+import { getDataLaporan } from "@/app/actions/laporan";
 
 type TipeTransaksi = "Transfer" | "Redeem" | "Package" | "Klaim";
 
 interface Transaksi {
-  id: number;
   tipe: TipeTransaksi;
-  member: string;
   email: string;
+  nama_member: string;
   miles: number;
   waktu: string;
-  klaim_disetujui?: boolean;
 }
 
-const initialTransaksi: Transaksi[] = [
-  { id: 1, tipe: "Transfer", member: "John W. Doe", email: "john@example.com", miles: -5000, waktu: "2025-01-15 10:30", klaim_disetujui: false },
-  { id: 2, tipe: "Redeem", member: "John W. Doe", email: "john@example.com", miles: -3000, waktu: "2025-01-20 16:00", klaim_disetujui: false },
-  { id: 3, tipe: "Package", member: "Jane Smith", email: "jane@example.com", miles: 5000, waktu: "2025-02-01 09:15", klaim_disetujui: false },
-  { id: 4, tipe: "Klaim", member: "Budi A. Santoso", email: "budi@example.com", miles: 2500, waktu: "2025-02-05 11:45", klaim_disetujui: true },
-  { id: 5, tipe: "Transfer", member: "Budi A. Santoso", email: "budi@example.com", miles: -2000, waktu: "2025-02-10 14:00", klaim_disetujui: false },
-  { id: 6, tipe: "Package", member: "John W. Doe", email: "john@example.com", miles: 10000, waktu: "2025-03-01 08:00", klaim_disetujui: false },
-];
-
-const topMemberData = [
-  { rank: 1, nama: "John W. Doe", email: "john@example.com", totalMiles: 18000, jumlahTransaksi: 3 },
-  { rank: 2, nama: "Jane Smith", email: "jane@example.com", totalMiles: 5000, jumlahTransaksi: 1 },
-  { rank: 3, nama: "Budi A. Santoso", email: "budi@example.com", totalMiles: 4500, jumlahTransaksi: 2 },
-];
+interface TopMember {
+  rank: number;
+  email: string;
+  total_miles: number;
+}
 
 const TIPE_OPTIONS: (TipeTransaksi | "Semua")[] = ["Semua", "Transfer", "Redeem", "Package", "Klaim"];
 
 const tipeIcon: Record<TipeTransaksi, string> = {
-  Transfer: "⇄",
-  Redeem: "🎁",
-  Package: "🛒",
-  Klaim: "✈",
+  Transfer: "⇄", Redeem: "🎁", Package: "🛒", Klaim: "✈",
 };
 
 export default function LaporanTransaksi() {
-  const [transaksi, setTransaksi] = useState<Transaksi[]>(initialTransaksi);
+  const [transaksi, setTransaksi] = useState<Transaksi[]>([]);
+  const [top5, setTop5] = useState<TopMember[]>([]);
+  const [totalMilesBeredar, setTotalMilesBeredar] = useState(0);
+  const [loading, setLoading] = useState(true);
+
   const [activeTab, setActiveTab] = useState<"riwayat" | "top">("riwayat");
   const [filterTipe, setFilterTipe] = useState<TipeTransaksi | "Semua">("Semua");
   const [filterMember, setFilterMember] = useState("");
@@ -53,44 +38,65 @@ export default function LaporanTransaksi() {
   const [filterTglSampai, setFilterTglSampai] = useState("");
   const [confirmHapus, setConfirmHapus] = useState<Transaksi | null>(null);
 
-  const totalMilesBeredar = 27500;
+  useEffect(() => {
+    getDataLaporan().then((res) => {
+      if (res.success) {
+        setTransaksi((res.transaksi ?? []) as Transaksi[]);
+        setTop5((res.top5 ?? []) as TopMember[]);
+        setTotalMilesBeredar(Number(res.total_miles_beredar ?? 0));
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  const bulanIni = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+
   const totalRedeemBulanIni = transaksi
-    .filter((t) => t.tipe === "Redeem" && t.waktu.startsWith("2025-01"))
+    .filter((t) => t.tipe === "Redeem" && t.waktu.startsWith(bulanIni))
     .reduce((acc, t) => acc + Math.abs(t.miles), 0);
+
   const totalKlaimDisetujui = transaksi
-    .filter((t) => t.tipe === "Klaim" && t.klaim_disetujui)
+    .filter((t) => t.tipe === "Klaim" && t.miles > 0)
     .reduce((acc, t) => acc + t.miles, 0);
 
   const filtered = transaksi.filter((t) => {
     const matchTipe = filterTipe === "Semua" || t.tipe === filterTipe;
     const matchMember =
       !filterMember ||
-      t.member.toLowerCase().includes(filterMember.toLowerCase()) ||
+      t.nama_member.toLowerCase().includes(filterMember.toLowerCase()) ||
       t.email.toLowerCase().includes(filterMember.toLowerCase());
     const matchDari = !filterTglDari || t.waktu >= filterTglDari;
     const matchSampai = !filterTglSampai || t.waktu <= filterTglSampai + " 99";
     return matchTipe && matchMember && matchDari && matchSampai;
   });
 
+  // Hapus dari state lokal (catatan: ini tidak hapus dari DB, sesuaikan nanti)
   function hapusTransaksi(item: Transaksi) {
-    if (item.tipe === "Klaim" && item.klaim_disetujui) return;
     setConfirmHapus(item);
   }
 
   function konfirmasiHapus() {
     if (!confirmHapus) return;
-    setTransaksi((prev) => prev.filter((t) => t.id !== confirmHapus.id));
+    // Hapus dari tampilan lokal
+    setTransaksi((prev) =>
+      prev.filter(
+        (t) =>
+          !(t.tipe === confirmHapus.tipe &&
+            t.email === confirmHapus.email &&
+            t.waktu === confirmHapus.waktu)
+      )
+    );
     setConfirmHapus(null);
   }
 
-  function canDelete(t: Transaksi) {
-    return !(t.tipe === "Klaim" && t.klaim_disetujui);
-  }
+  if (loading) return <div className="p-8 text-gray-400">Memuat data laporan...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-6 py-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Laporan & Riwayat Transaksi</h1>
+
+        {/* Summary cards */}
         <div className="grid grid-cols-3 gap-4 mb-7">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center gap-3">
             <span className="text-2xl">📈</span>
@@ -121,6 +127,7 @@ export default function LaporanTransaksi() {
           </div>
         </div>
 
+        {/* Tabs */}
         <div className="flex gap-1 mb-5 border-b border-gray-200">
           {(["riwayat", "top"] as const).map((tab) => (
             <button
@@ -139,6 +146,7 @@ export default function LaporanTransaksi() {
 
         {activeTab === "riwayat" && (
           <>
+            {/* Filter */}
             <div className="flex flex-wrap gap-3 mb-4">
               <select
                 value={filterTipe}
@@ -146,9 +154,7 @@ export default function LaporanTransaksi() {
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
               >
                 {TIPE_OPTIONS.map((o) => (
-                  <option key={o} value={o}>
-                    {o === "Semua" ? "Semua Tipe" : o}
-                  </option>
+                  <option key={o} value={o}>{o === "Semua" ? "Semua Tipe" : o}</option>
                 ))}
               </select>
               <input
@@ -200,8 +206,8 @@ export default function LaporanTransaksi() {
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((t) => (
-                      <tr key={t.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    filtered.map((t, i) => (
+                      <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="px-4 py-3">
                           <span className="flex items-center gap-1.5 text-gray-700">
                             <span className="text-base">{tipeIcon[t.tipe]}</span>
@@ -209,32 +215,18 @@ export default function LaporanTransaksi() {
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="font-medium text-gray-800">{t.member}</p>
+                          <p className="font-medium text-gray-800">{t.nama_member}</p>
                           <p className="text-xs text-gray-400">{t.email}</p>
                         </td>
-                        <td
-                          className={`px-4 py-3 text-right font-semibold ${
-                            t.miles > 0 ? "text-green-600" : "text-red-500"
-                          }`}
-                        >
-                          {t.miles > 0 ? "+" : ""}
-                          {t.miles.toLocaleString("id-ID")}
+                        <td className={`px-4 py-3 text-right font-semibold ${t.miles > 0 ? "text-green-600" : "text-red-500"}`}>
+                          {t.miles > 0 ? "+" : ""}{Number(t.miles).toLocaleString("id-ID")}
                         </td>
                         <td className="px-4 py-3 text-gray-500">{t.waktu}</td>
                         <td className="px-4 py-3 text-center">
                           <button
                             onClick={() => hapusTransaksi(t)}
-                            disabled={!canDelete(t)}
-                            title={
-                              !canDelete(t)
-                                ? "Riwayat Klaim Disetujui tidak dapat dihapus"
-                                : "Hapus riwayat"
-                            }
-                            className={`transition-colors ${
-                              canDelete(t)
-                                ? "text-red-400 hover:text-red-600 cursor-pointer"
-                                : "text-gray-200 cursor-not-allowed"
-                            }`}
+                            title="Hapus riwayat"
+                            className="text-red-400 hover:text-red-600 cursor-pointer transition-colors"
                           >
                             🗑
                           </button>
@@ -247,6 +239,8 @@ export default function LaporanTransaksi() {
             </div>
           </>
         )}
+
+        {/* Tab Top Member — data dari stored procedure teman (trigger 5.2) */}
         {activeTab === "top" && (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100">
@@ -258,27 +252,28 @@ export default function LaporanTransaksi() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-5 py-3 font-semibold text-gray-600">#</th>
-                  <th className="text-left px-5 py-3 font-semibold text-gray-600">Member</th>
+                  <th className="text-left px-5 py-3 font-semibold text-gray-600">Email</th>
                   <th className="text-right px-5 py-3 font-semibold text-gray-600">Total Miles</th>
-                  <th className="text-right px-5 py-3 font-semibold text-gray-600">
-                    Jumlah Transaksi
-                  </th>
                 </tr>
               </thead>
               <tbody>
-                {topMemberData.map((m) => (
-                  <tr key={m.rank} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-5 py-3 font-bold text-gray-600">{m.rank}</td>
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-gray-800">{m.nama}</p>
-                      <p className="text-xs text-gray-400">{m.email}</p>
+                {top5.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="text-center py-8 text-gray-400">
+                      Tidak ada data
                     </td>
-                    <td className="px-5 py-3 text-right font-semibold text-gray-800">
-                      {m.totalMiles.toLocaleString("id-ID")}
-                    </td>
-                    <td className="px-5 py-3 text-right text-gray-600">{m.jumlahTransaksi}</td>
                   </tr>
-                ))}
+                ) : (
+                  top5.map((m) => (
+                    <tr key={m.rank} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="px-5 py-3 font-bold text-gray-600">{m.rank}</td>
+                      <td className="px-5 py-3 text-gray-800">{m.email}</td>
+                      <td className="px-5 py-3 text-right font-semibold text-gray-800">
+                        {Number(m.total_miles).toLocaleString("id-ID")}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getDataRedeem, redeemHadiah } from "@/app/actions/redeem";
 
-const dummyMember = {
-  email: "john@example.com",
-  nama: "Mr. John William Doe",
-  awardMiles: 32000,
-};
+function getEmailFromStorage(): string {
+  if (typeof window === "undefined") return "";
+  const stored = localStorage.getItem("user");
+  return stored ? JSON.parse(stored).email : "";
+}
 
 interface Hadiah {
   kode_hadiah: string;
@@ -18,97 +19,74 @@ interface Hadiah {
   penyedia: string;
 }
 
-const dummyHadiah: Hadiah[] = [
-  {
-    kode_hadiah: "RWD-001",
-    nama: "Tiket Domestik PP",
-    miles: 15000,
-    deskripsi: "Tiket pulang-pergi rute domestik Indonesia",
-    valid_start_date: "2024-01-01",
-    program_end: "2027-12-31",
-    penyedia: "Garuda Indonesia",
-  },
-  {
-    kode_hadiah: "RWD-002",
-    nama: "Upgrade ke Business Class",
-    miles: 25000,
-    deskripsi: "Melakukan upgrade dari economy class ke business class",
-    valid_start_date: "2024-01-01",
-    program_end: "2027-12-31",
-    penyedia: "Garuda Indonesia",
-  },
-  {
-    kode_hadiah: "RWD-003",
-    nama: "Voucher Hotel Rp 500.000",
-    miles: 8000,
-    deskripsi: "Voucher hotel Jabodetabek berlaku 1 malam",
-    valid_start_date: "2024-06-01",
-    program_end: "2027-06-30",
-    penyedia: "TravelokaPartner",
-  },
-  {
-    kode_hadiah: "RWD-004",
-    nama: "Akses Lounge 1x",
-    miles: 3000,
-    deskripsi: "Akses lounge seluruh bandara partner sekali masuk",
-    valid_start_date: "2024-01-01",
-    program_end: "2027-12-31",
-    penyedia: "Plaza Premium",
-  },
-  {
-    kode_hadiah: "RWD-005",
-    nama: "Upgrade Business Class",
-    miles: 15000,
-    deskripsi: "Melakukan upgrade dari economy class ke business class",
-    valid_start_date: "2026-01-01",
-    program_end: "2027-01-01",
-    penyedia: "Garuda Indonesia",
-  },
-];
-
 interface RiwayatRedeem {
   hadiah: string;
   waktu: string;
   miles: number;
 }
 
-const dummyRiwayat: RiwayatRedeem[] = [
-  { hadiah: "Akses Lounge 1x", waktu: "2025-01-20 16:00", miles: -3000 },
-  { hadiah: "Voucher Hotel Rp 500.000", waktu: "2024-11-05 10:30", miles: -8000 },
-];
+const tipeIcon: Record<string, string> = {
+  Transfer: "⇄", Redeem: "🎁", Package: "🛒", Klaim: "✈",
+};
 
 export default function RedeemHadiah() {
+  const [email] = useState<string>(getEmailFromStorage);
+  const [awardMiles, setAwardMiles] = useState(0);
+  const [katalog, setKatalog] = useState<Hadiah[]>([]);
+  const [riwayat, setRiwayat] = useState<RiwayatRedeem[]>([]);
   const [activeTab, setActiveTab] = useState<"katalog" | "riwayat">("katalog");
   const [confirmHadiah, setConfirmHadiah] = useState<Hadiah | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
-  const [riwayat, setRiwayat] = useState<RiwayatRedeem[]>(dummyRiwayat);
-  const [awardMiles, setAwardMiles] = useState(dummyMember.awardMiles);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!email) return;
+    getDataRedeem(email).then((res) => {
+      if (res.success) {
+        setAwardMiles(res.award_miles ?? 0);
+        setKatalog((res.hadiah ?? []) as Hadiah[]);
+        setRiwayat((res.riwayat ?? []) as RiwayatRedeem[]);
+      }
+      setLoading(false);
+    });
+  }, [email]);
 
   const today = new Date().toISOString().split("T")[0];
-  const katalogAktif = dummyHadiah.filter((h) => h.program_end >= today);
+  const katalogAktif = katalog.filter((h) => h.program_end >= today && h.valid_start_date <= today);
 
-  function handleRedeem(hadiah: Hadiah) {
-    setConfirmHadiah(hadiah);
-  }
+  async function konfirmasiRedeem() {
+    if (!confirmHadiah || submitting) return;
+    setSubmitting(true);
+    setErrorMsg("");
 
-  function konfirmasiRedeem() {
-    if (!confirmHadiah) return;
-    if (awardMiles < confirmHadiah.miles) {
-      alert("Award miles tidak mencukupi!");
+    const res = await redeemHadiah(email, confirmHadiah.kode_hadiah);
+
+    if (!res.success) {
+      setErrorMsg(res.message ?? "Gagal redeem.");
       setConfirmHadiah(null);
+      setSubmitting(false);
       return;
     }
-    const newEntry: RiwayatRedeem = {
-      hadiah: confirmHadiah.nama,
-      waktu: new Date().toISOString().replace("T", " ").slice(0, 16),
-      miles: -confirmHadiah.miles,
-    };
-    setRiwayat([newEntry, ...riwayat]);
-    setAwardMiles((prev) => prev - confirmHadiah.miles);
-    setSuccessMsg(`Berhasil redeem "${confirmHadiah.nama}"!`);
+
+    // Update state dengan data terbaru dari DB
+    setAwardMiles(res.award_miles ?? awardMiles - confirmHadiah.miles);
+    setRiwayat((prev) => [
+      {
+        hadiah: confirmHadiah.nama,
+        waktu: new Date().toISOString().replace("T", " ").slice(0, 16),
+        miles: -confirmHadiah.miles,
+      },
+      ...prev,
+    ]);
+    setSuccessMsg(res.message ?? `Berhasil redeem "${confirmHadiah.nama}"!`);
     setConfirmHadiah(null);
-    setTimeout(() => setSuccessMsg(""), 3000);
+    setSubmitting(false);
+    setTimeout(() => setSuccessMsg(""), 4000);
   }
+
+  if (loading) return <div className="p-8 text-gray-400">Memuat data...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -118,11 +96,20 @@ export default function RedeemHadiah() {
           Award Miles tersedia:{" "}
           <span className="font-bold text-gray-800">{awardMiles.toLocaleString("id-ID")}</span>
         </p>
+
+        {/* Pesan sukses dari action/trigger */}
         {successMsg && (
           <div className="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">
             ✓ {successMsg}
           </div>
         )}
+        {/* Pesan error dari action/trigger */}
+        {errorMsg && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+            {errorMsg}
+          </div>
+        )}
+
         <div className="flex gap-1 mb-6 border-b border-gray-200">
           {(["katalog", "riwayat"] as const).map((tab) => (
             <button
@@ -138,8 +125,12 @@ export default function RedeemHadiah() {
             </button>
           ))}
         </div>
+
         {activeTab === "katalog" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {katalogAktif.length === 0 && (
+              <p className="text-gray-400 text-sm col-span-2">Tidak ada hadiah aktif saat ini.</p>
+            )}
             {katalogAktif.map((hadiah) => (
               <div
                 key={hadiah.kode_hadiah}
@@ -160,7 +151,7 @@ export default function RedeemHadiah() {
                   Periode: {hadiah.valid_start_date} — {hadiah.program_end}
                 </p>
                 <button
-                  onClick={() => handleRedeem(hadiah)}
+                  onClick={() => { setErrorMsg(""); setConfirmHadiah(hadiah); }}
                   disabled={awardMiles < hadiah.miles}
                   className={`w-full py-2 rounded-lg text-sm font-bold transition-colors ${
                     awardMiles >= hadiah.miles
@@ -177,6 +168,7 @@ export default function RedeemHadiah() {
             ))}
           </div>
         )}
+
         {activeTab === "riwayat" && (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <table className="w-full text-sm">
@@ -201,7 +193,7 @@ export default function RedeemHadiah() {
                       <td className="px-5 py-3 text-gray-800">{r.hadiah}</td>
                       <td className="px-5 py-3 text-gray-500">{r.waktu}</td>
                       <td className="px-5 py-3 text-right font-semibold text-red-500">
-                        {r.miles.toLocaleString("id-ID")}
+                        -{Math.abs(r.miles).toLocaleString("id-ID")}
                       </td>
                       <td className="px-5 py-3 text-center">
                         <button className="text-gray-400 hover:text-gray-600 transition-colors" title="Cetak">
@@ -216,6 +208,7 @@ export default function RedeemHadiah() {
           </div>
         )}
       </div>
+
       {confirmHadiah && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
@@ -225,8 +218,7 @@ export default function RedeemHadiah() {
               <span className="font-bold text-gray-800">
                 {confirmHadiah.miles.toLocaleString("id-ID")}
               </span>{" "}
-              untuk reward{" "}
-              <span className="font-semibold">{confirmHadiah.nama}</span> dengan kode{" "}
+              untuk reward <span className="font-semibold">{confirmHadiah.nama}</span> dengan kode{" "}
               <span className="font-semibold">{confirmHadiah.kode_hadiah}</span> dari{" "}
               {confirmHadiah.penyedia}
             </p>
@@ -239,9 +231,10 @@ export default function RedeemHadiah() {
               </button>
               <button
                 onClick={konfirmasiRedeem}
-                className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
+                disabled={submitting}
+                className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-50"
               >
-                Redeem
+                {submitting ? "Memproses..." : "Redeem"}
               </button>
             </div>
           </div>

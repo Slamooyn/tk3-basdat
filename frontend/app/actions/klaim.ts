@@ -130,6 +130,13 @@ export async function updateStatusKlaim(
   status: "Disetujui" | "Ditolak"
 ) {
   const client = await pool.connect();
+  const notices: string[] = []; // ← tampung pesan dari trigger
+
+  // ← tangkap RAISE NOTICE dari trigger 5-1 dan 4-2
+  client.on("notice", (msg) => {
+    if (msg.message) notices.push(msg.message);
+  });
+
   try {
     const result = await client.query(
       `UPDATE claim_missing_miles
@@ -143,7 +150,8 @@ export async function updateStatusKlaim(
     }
     return {
       success: true,
-      message: `Klaim berhasil di${status === "Disetujui" ? "setujui" : "tolak"}.`,
+      message: notices.join(" | ") || `Klaim berhasil di${status === "Disetujui" ? "setujui" : "tolak"}.`,
+      notices, // ← opsional, kalau mau debug
     };
   } catch (err: any) {
     return { success: false, message: err.message };
