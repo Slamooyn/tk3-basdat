@@ -22,7 +22,7 @@ export default function Navbar() {
     const [user, setUser] = useState<any>(null);
     const router = useRouter();
     const pathname = usePathname();
-    const [namaLengkap, setNamaLengkap] = useState<string>(""); // ← tambah ini
+    const [namaLengkap, setNamaLengkap] = useState<string>("");
 
     useEffect(() => {
         const stored = localStorage.getItem("user");
@@ -171,8 +171,6 @@ export default function Navbar() {
                         </>
                     )}
                 </div>
-
-                {/* RIGHT */}
                 <div className="flex items-center gap-4">
                     {user ? (
                         <>
