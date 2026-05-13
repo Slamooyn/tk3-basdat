@@ -1,53 +1,92 @@
-CREATE OR REPLACE FUNCTION check_duplicate_email()
+--Trigger Nomor 4, Bagian 1
+CREATE OR REPLACE FUNCTION fn_check_duplicate_claim()
 RETURNS TRIGGER AS $$
+DECLARE
+    v_exists INT;
 BEGIN
-    IF EXISTS (
-        SELECT 1 FROM pengguna 
-        WHERE LOWER(email) = LOWER(NEW.email)
-    ) THEN
-        RAISE EXCEPTION 'ERROR: Email "%" sudah terdaftar, silakan gunakan email lain.', NEW.email;
+    -- Cek apakah sudah ada klaim dengan kombinasi yang sama
+    SELECT COUNT(*) INTO v_exists
+    FROM claim_missing_miles
+    WHERE email_member       = NEW.email_member
+      AND flight_number      = NEW.flight_number
+      AND tanggal_penerbangan = NEW.tanggal_penerbangan
+      AND nomor_tiket        = NEW.nomor_tiket;
+
+    IF v_exists > 0 THEN
+        RAISE EXCEPTION 'ERROR: Klaim untuk penerbangan "%" pada tanggal "%" dengan nomor tiket "%" sudah pernah diajukan sebelumnya.',
+            NEW.flight_number,
+            TO_CHAR(NEW.tanggal_penerbangan, 'YYYY-MM-DD'),
+            NEW.nomor_tiket;
     END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER trg_check_duplicate_email
-BEFORE INSERT ON pengguna
-FOR EACH ROW
-EXECUTE FUNCTION check_duplicate_email();
+DROP TRIGGER IF EXISTS trg_check_duplicate_claim ON claim_missing_miles;
 
-CREATE OR REPLACE FUNCTION verify_login(
-    p_email VARCHAR,
-    p_password VARCHAR
-)
-RETURNS TABLE(
-    email VARCHAR,
-    salutation VARCHAR,
-    first_mid_name VARCHAR,
-    last_name VARCHAR,
-    is_member BOOLEAN,
-    is_staf BOOLEAN
-) AS $$
+CREATE TRIGGER trg_check_duplicate_claim
+    BEFORE INSERT ON claim_missing_miles
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_check_duplicate_claim();
+    
+    
+--Trigger Nomor 4, Bagian 2
+
+CREATE OR REPLACE FUNCTION fn_update_member_tier()
+RETURNS TRIGGER AS $$
 DECLARE
-    v_stored_password VARCHAR;
+    v_tier_lama  VARCHAR(10);
+    v_tier_baru  VARCHAR(10);
+    v_nama_lama  VARCHAR(50);
+    v_nama_baru  VARCHAR(50);
 BEGIN
-    SELECT p.password INTO v_stored_password
-    FROM pengguna p
-    WHERE LOWER(p.email) = LOWER(p_email);
-
-    IF v_stored_password IS NULL OR v_stored_password <> p_password THEN
-        RAISE EXCEPTION 'Email atau password salah, silakan coba lagi.';
+    -- Hanya jalankan jika total_miles benar-benar berubah
+    IF NEW.total_miles = OLD.total_miles THEN
+        RETURN NEW;
     END IF;
 
-    RETURN QUERY
-    SELECT 
-        p.email::VARCHAR,
-        p.salutation::VARCHAR,
-        p.first_mid_name::VARCHAR,
-        p.last_name::VARCHAR,
-        EXISTS(SELECT 1 FROM member m WHERE LOWER(m.email) = LOWER(p_email))::BOOLEAN,
-        EXISTS(SELECT 1 FROM staf s WHERE LOWER(s.email) = LOWER(p_email))::BOOLEAN
-    FROM pengguna p
-    WHERE LOWER(p.email) = LOWER(p_email);
+    -- Simpan tier lama
+    v_tier_lama := OLD.id_tier;
+
+    -- Cari tier baru berdasarkan minimal_tier_miles tertinggi yang masih terpenuhi
+    SELECT id_tier INTO v_tier_baru
+    FROM tier
+    WHERE minimal_tier_miles <= NEW.total_miles
+    ORDER BY minimal_tier_miles DESC
+    LIMIT 1;
+
+    -- Jika tidak ditemukan tier (seharusnya tidak terjadi karena Blue = 0),
+    -- fallback ke tier terendah
+    IF v_tier_baru IS NULL THEN
+        SELECT id_tier INTO v_tier_baru
+        FROM tier
+        ORDER BY minimal_tier_miles ASC
+        LIMIT 1;
+    END IF;
+
+    -- Update tier jika berbeda
+    IF v_tier_baru <> v_tier_lama THEN
+        NEW.id_tier := v_tier_baru;
+
+        -- Ambil nama tier lama dan baru untuk pesan
+        SELECT nama INTO v_nama_lama FROM tier WHERE id_tier = v_tier_lama;
+        SELECT nama INTO v_nama_baru FROM tier WHERE id_tier = v_tier_baru;
+
+        RAISE NOTICE 'SUKSES: Tier Member "%" telah diperbarui dari "%" menjadi "%" berdasarkan total miles yang dimiliki.',
+            NEW.email,
+            v_nama_lama,
+            v_nama_baru;
+    END IF;
+
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Drop trigger jika sudah ada sebelumnya, lalu buat ulang
+DROP TRIGGER IF EXISTS trg_update_member_tier ON member;
+
+CREATE TRIGGER trg_update_member_tier
+    BEFORE UPDATE OF total_miles ON member
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_update_member_tier();
