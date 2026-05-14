@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { getDashboardData } from "@/app/actions/auth";
 import {
     FiHome,
     FiUser,
@@ -21,6 +22,7 @@ export default function Navbar() {
     const [user, setUser] = useState<any>(null);
     const router = useRouter();
     const pathname = usePathname();
+    const [namaLengkap, setNamaLengkap] = useState<string>("");
 
     useEffect(() => {
         const stored = localStorage.getItem("user");
@@ -43,6 +45,22 @@ export default function Navbar() {
                 }`}
         />
     );
+     useEffect(() => {
+        const stored = localStorage.getItem("user");
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            setUser(parsed);
+            getDashboardData(parsed.email, parsed.role).then((res) => {
+                if (res.success && res.data) {
+                    const nama = `${res.data.first_mid_name ?? ""} ${res.data.last_name ?? ""}`.trim();
+                    setNamaLengkap(nama);
+                }
+            });
+        } else {
+            setUser(null);
+            setNamaLengkap("");
+        }
+    }, [pathname]);
 
     return (
         <nav className="bg-gradient-to-r from-[var(--color-navy-dark)] to-[var(--color-navy-mid)] text-white px-6 py-3">
@@ -153,13 +171,11 @@ export default function Navbar() {
                         </>
                     )}
                 </div>
-
-                {/* RIGHT */}
                 <div className="flex items-center gap-4">
                     {user ? (
                         <>
                             <span className="text-sm opacity-80">
-                                Masuk sebagai <b>{user.name}</b> - {user.role}
+                                Masuk sebagai <b>{namaLengkap || user.name}</b> - {user.role}
                             </span>
 
                             <button
