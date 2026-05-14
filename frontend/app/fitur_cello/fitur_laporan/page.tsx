@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getDataLaporan } from "@/app/actions/laporan";
+import { getTop5Member } from "@/app/actions/hadiah";
 
 type TipeTransaksi = "Transfer" | "Redeem" | "Package" | "Klaim";
 
@@ -38,6 +39,9 @@ export default function LaporanTransaksi() {
   const [filterTglSampai, setFilterTglSampai] = useState("");
   const [confirmHapus, setConfirmHapus] = useState<Transaksi | null>(null);
 
+  const [top5List, setTop5List] = useState<any[]>([]);
+  const [pesanTop5, setPesanTop5] = useState("");
+
   useEffect(() => {
     getDataLaporan().then((res) => {
       if (res.success) {
@@ -47,6 +51,8 @@ export default function LaporanTransaksi() {
       }
       setLoading(false);
     });
+
+    fetchTop5();
   }, []);
 
   const bulanIni = new Date().toISOString().slice(0, 7); // "YYYY-MM"
@@ -87,6 +93,14 @@ export default function LaporanTransaksi() {
       )
     );
     setConfirmHapus(null);
+  }
+
+  async function fetchTop5() {
+  const res = await getTop5Member();
+    if (res.success && res.data) {
+      setTop5List(res.data);
+      setPesanTop5(res.pesan || "");
+    }
   }
 
   if (loading) return <div className="p-8 text-gray-400">Memuat data laporan...</div>;
@@ -248,6 +262,11 @@ export default function LaporanTransaksi() {
                 Top Member berdasarkan Total Miles
               </p>
             </div>
+            {pesanTop5 && (
+              <div className="mb-4 mx-5 mt-4 px-4 py-3 rounded text-sm font-medium bg-green-100 text-green-700">
+                {pesanTop5}
+              </div>
+            )}  
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -257,14 +276,14 @@ export default function LaporanTransaksi() {
                 </tr>
               </thead>
               <tbody>
-                {top5.length === 0 ? (
+                {top5List.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="text-center py-8 text-gray-400">
                       Tidak ada data
                     </td>
                   </tr>
                 ) : (
-                  top5.map((m) => (
+                  top5List.map((m) => (
                     <tr key={m.rank} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-5 py-3 font-bold text-gray-600">{m.rank}</td>
                       <td className="px-5 py-3 text-gray-800">{m.email}</td>
