@@ -383,3 +383,34 @@ export async function getAllMembers(): Promise<
     client.release();
   }
 }
+
+export async function changePassword(email: string, oldPassword: string, newPassword: string) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `SELECT password FROM pengguna WHERE LOWER(email) = LOWER($1)`,
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return { success: false, message: "User tidak ditemukan." };
+    }
+
+    const isValid = await bcrypt.compare(oldPassword, result.rows[0].password);
+    if (!isValid) {
+      return { success: false, message: "Password lama salah." };
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+    await client.query(
+      `UPDATE pengguna SET password = $1 WHERE LOWER(email) = LOWER($2)`,
+      [hashed, email]
+    );
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  } finally {
+    client.release();
+  }
+}
