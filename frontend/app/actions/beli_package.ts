@@ -30,8 +30,6 @@ export async function getDataBeliMiles(emailMember: string) {
   }
 }
 
-// Logic manual karena trigger 3.2 belum dipasang teman
-// Kalau trigger 3.2 sudah dipasang, hapus bagian UPDATE member di bawah
 export async function beliMilesPackage(emailMember: string, idPackage: string) {
   const client = await pool.connect();
   try {
@@ -51,16 +49,6 @@ export async function beliMilesPackage(emailMember: string, idPackage: string) {
       `INSERT INTO member_award_miles_package (id_award_miles_package, email_member, timestamp)
        VALUES ($1, $2, NOW())`,
       [idPackage, emailMember]
-    );
-
-    // Update award_miles DAN total_miles
-    // Kalau trigger 3.2 sudah dipasang teman, hapus UPDATE ini
-    await client.query(
-      `UPDATE member
-       SET award_miles = award_miles + $1,
-           total_miles = total_miles + $1
-       WHERE LOWER(email) = LOWER($2)`,
-      [pkg.jumlah_award_miles, emailMember]
     );
 
     await client.query("COMMIT");
