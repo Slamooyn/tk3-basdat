@@ -174,16 +174,23 @@ export async function hapusHadiah(kode_hadiah: string) {
 // GET top 5 member berdasarkan total miles (stored procedure)
 export async function getTop5Member() {
   const client = await pool.connect();
+  const notices: string[] = [];
+
+  // Tangkap RAISE NOTICE dari stored procedure
+  client.on("notice", (msg) => {
+    if (msg.message) notices.push(msg.message);
+  });
+
   try {
     const result = await client.query(`
       SELECT * FROM get_top5_member_by_total_miles()
     `);
-    
-    // Generate pesan sesuai format soal
-    const top1 = result.rows[0];
-    const pesan = `SUKSES: Daftar Top 5 Member berdasarkan total miles berhasil diperbarui, dengan peringkat pertama "${top1.email}" memiliki ${top1.total_miles} miles.`;
 
-    return { success: true, data: result.rows, pesan };
+    return { 
+      success: true, 
+      data: result.rows,
+      pesan: notices[0] || "" // ambil pesan pertama dari trigger
+    };
   } catch (err: any) {
     return { success: false, message: err.message };
   } finally {
