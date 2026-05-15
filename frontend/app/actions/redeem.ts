@@ -49,22 +49,37 @@ export async function getDataRedeem(emailMember: string) {
 
 export async function redeemHadiah(emailMember: string, kodeHadiah: string) {
   const client = await pool.connect();
+
+  // Tangkap RAISE NOTICE dari trigger 3.1 (redeem berhasil)
+  const notices: string[] = [];
+  client.on("notice", (msg) => {
+    if (msg.message) notices.push(msg.message);
+  });
+
   try {
-    // Trigger 3.1 otomatis cek periode, cek saldo, dan kurangi award_miles
     await client.query(
-      `INSERT INTO redeem (email_member, kode_hadiah, timestamp) VALUES ($1, $2, NOW())`,
+      `INSERT INTO redeem (email_member, kode_hadiah, timestamp)
+       VALUES ($1, $2, NOW())`,
       [emailMember, kodeHadiah]
     );
+
+    // Ambil award_miles terbaru setelah trigger 3.1 kurangi
     const updated = await client.query(
       `SELECT award_miles FROM member WHERE LOWER(email) = LOWER($1)`,
       [emailMember]
     );
+
+    // Ambil pesan sukses dari trigger 3.1
+    const pesanRedeem = notices.find((n) => n.startsWith("SUKSES: Redeem"))
+      ?? `SUKSES: Redeem hadiah berhasil.`;
+
     return {
       success: true,
-      message: `SUKSES: Redeem berhasil.`,
+      message: pesanRedeem,
       award_miles: updated.rows[0].award_miles,
     };
   } catch (err: any) {
+    // Pesan error dari trigger 3.1 (saldo tidak cukup / periode tidak aktif)
     return { success: false, message: err.message };
   } finally {
     client.release();

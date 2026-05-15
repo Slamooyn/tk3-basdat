@@ -28,6 +28,7 @@ export default function TransferMilesMember() {
   const [formError, setFormError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [tierMsg, setTierMsg] = useState("");
 
   useEffect(() => {
     const raw = localStorage.getItem("user");
@@ -50,6 +51,7 @@ export default function TransferMilesMember() {
     setCatatan("");
     setFormError("");
     setSuccessMsg("");
+    setTierMsg("");
     setShowModal(true);
   };
 
@@ -83,6 +85,12 @@ export default function TransferMilesMember() {
       setShowModal(false);
       setSuccessMsg(result.message ?? "Transfer berhasil.");
       setTimeout(() => setSuccessMsg(""), 4000);
+
+      // Tampilkan pesan tier change dari trigger 4.2 kalau ada
+      if (result.tier_message) {
+        setTierMsg(result.tier_message);
+        setTimeout(() => setTierMsg(""), 6000);
+      }
     } else {
       setFormError(result.message ?? "Transfer gagal.");
     }
@@ -117,9 +125,17 @@ export default function TransferMilesMember() {
           </button>
         </div>
 
+        {/* Pesan sukses transfer */}
         {successMsg && (
           <div className="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg">
             {successMsg}
+          </div>
+        )}
+
+        {/* Pesan tier change dari trigger 4.2 */}
+        {tierMsg && (
+          <div className="mb-4 px-4 py-3 bg-yellow-50 border border-yellow-300 text-yellow-800 text-sm rounded-lg">
+            🏆 {tierMsg}
           </div>
         )}
 
@@ -228,7 +244,10 @@ export default function TransferMilesMember() {
             </div>
 
             <div className="px-6 pb-5 flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg"
+              >
                 Batal
               </button>
               <button

@@ -45,7 +45,9 @@ export async function getDataTransfer(emailMember: string) {
   }
 }
 
-// POST transfer miles — trigger 2 otomatis cek saldo dan catat log
+// POST transfer miles
+// Trigger 2 otomatis cek saldo dan catat log
+// Trigger 4.2 otomatis jalan kalau total_miles penerima berubah dan tier naik
 export async function transferMiles(
   emailPengirim: string,
   emailPenerima: string,
@@ -53,9 +55,11 @@ export async function transferMiles(
   catatan: string
 ) {
   const client = await pool.connect();
-  const notices: string[] = [];
 
-  // Tangkap pesan RAISE NOTICE dari trigger 2
+  // Tangkap RAISE NOTICE dari:
+  // - trigger 2 (transfer berhasil)
+  // - trigger 4.2 (tier penerima berubah)
+  const notices: string[] = [];
   client.on("notice", (msg) => {
     if (msg.message) notices.push(msg.message);
   });
@@ -73,28 +77,33 @@ export async function transferMiles(
       };
     }
 
-    // INSERT ke tabel transfer — trigger 2 akan:
-    // - cek saldo pengirim (2-1), kalau kurang → RAISE EXCEPTION
-    // - catat log dan update award_miles (2-2) → RAISE NOTICE sukses
     await client.query(
       `INSERT INTO transfer (email_member_1, email_member_2, timestamp, jumlah, catatan)
        VALUES ($1, $2, NOW(), $3, $4)`,
       [emailPengirim, emailPenerima, jumlah, catatan]
     );
 
-    // Ambil award_miles terbaru setelah transfer
+    // Ambil award_miles terbaru pengirim setelah transfer
     const updated = await client.query(
       `SELECT award_miles FROM member WHERE LOWER(email) = LOWER($1)`,
       [emailPengirim]
     );
 
+    // Pesan dari trigger 2
+    const pesanTransfer = notices.find((n) => n.startsWith("SUKSES: Transfer"))
+      ?? `SUKSES: Transfer ${jumlah} miles berhasil.`;
+
+    // Pesan dari trigger 4.2 (kalau tier penerima naik)
+    const pesanTier = notices.find((n) => n.startsWith("SUKSES: Tier Member"));
+
     return {
       success: true,
-      message: notices.join(" | ") || `SUKSES: Transfer ${jumlah} miles berhasil.`,
+      message: pesanTransfer,
+      tier_message: pesanTier ?? null,
       award_miles: updated.rows[0].award_miles,
     };
   } catch (err: any) {
-    // Pesan error dari trigger 2-1 (saldo tidak cukup) muncul di sini
+    // Pesan error dari trigger 2-1 (saldo tidak cukup)
     return { success: false, message: err.message };
   } finally {
     client.release();
