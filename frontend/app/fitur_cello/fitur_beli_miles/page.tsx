@@ -25,6 +25,7 @@ export default function BeliPackage() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [confirmPkg, setConfirmPkg] = useState<Package | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
+  const [tierMsg, setTierMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -44,6 +45,7 @@ export default function BeliPackage() {
     if (!confirmPkg || submitting) return;
     setSubmitting(true);
     setErrorMsg("");
+    setTierMsg("");
 
     const res = await beliMilesPackage(email, confirmPkg.id);
 
@@ -55,7 +57,16 @@ export default function BeliPackage() {
     }
 
     setAwardMiles(res.award_miles ?? awardMiles + confirmPkg.jumlah_award_miles);
-    setSuccessMsg(res.message ?? `Berhasil membeli ${confirmPkg.jumlah_award_miles.toLocaleString("id-ID")} Award Miles!`);
+    setSuccessMsg(
+      `SUKSES: Pembelian package berhasil. Award miles dan total miles Anda bertambah ${confirmPkg.jumlah_award_miles.toLocaleString("id-ID")} miles.`
+    );
+
+    // Tampilkan pesan tier change dari trigger 4.2 kalau ada
+    if (res.tier_message) {
+      setTierMsg(res.tier_message);
+      setTimeout(() => setTierMsg(""), 6000);
+    }
+
     setConfirmPkg(null);
     setSubmitting(false);
     setTimeout(() => setSuccessMsg(""), 4000);
@@ -72,13 +83,23 @@ export default function BeliPackage() {
           <span className="font-bold text-gray-800">{awardMiles.toLocaleString("id-ID")}</span>
         </p>
 
+        {/* Pesan sukses pembelian */}
         {successMsg && (
-          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">
+          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">
             ✓ {successMsg}
           </div>
         )}
+
+        {/* Pesan tier change dari trigger 4.2 */}
+        {tierMsg && (
+          <div className="mb-4 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-lg px-4 py-3 text-sm">
+            🏆 {tierMsg}
+          </div>
+        )}
+
+        {/* Pesan error */}
         {errorMsg && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
             {errorMsg}
           </div>
         )}

@@ -31,62 +31,69 @@ CREATE TRIGGER trg_check_duplicate_claim
     EXECUTE FUNCTION fn_check_duplicate_claim();
     
     
---Trigger Nomor 4, Bagian 2
+-- TK04 - Trigger Nomor 4, Bagian 2 
+
+CREATE TABLE IF NOT EXISTS tier_change_log (
+  email VARCHAR(100) PRIMARY KEY,
+  pesan TEXT,
+  updated_at TIMESTAMP DEFAULT NOW()
+);
 
 CREATE OR REPLACE FUNCTION fn_update_member_tier()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_tier_lama  VARCHAR(10);
-    v_tier_baru  VARCHAR(10);
-    v_nama_lama  VARCHAR(50);
-    v_nama_baru  VARCHAR(50);
+  v_tier_lama  VARCHAR(10);
+  v_tier_baru  VARCHAR(10);
+  v_nama_lama  VARCHAR(50);
+  v_nama_baru  VARCHAR(50);
+  v_pesan      TEXT;
 BEGIN
-    -- Hanya jalankan jika total_miles benar-benar berubah
-    IF NEW.total_miles = OLD.total_miles THEN
-        RETURN NEW;
-    END IF;
+  IF NEW.total_miles = OLD.total_miles THEN
+    RETURN NEW;
+  END IF;
 
-    -- Simpan tier lama
-    v_tier_lama := OLD.id_tier;
+  v_tier_lama := OLD.id_tier;
 
-    -- Cari tier baru berdasarkan minimal_tier_miles tertinggi yang masih terpenuhi
+  SELECT id_tier INTO v_tier_baru
+  FROM tier
+  WHERE minimal_tier_miles <= NEW.total_miles
+  ORDER BY minimal_tier_miles DESC
+  LIMIT 1;
+
+  IF v_tier_baru IS NULL THEN
     SELECT id_tier INTO v_tier_baru
     FROM tier
-    WHERE minimal_tier_miles <= NEW.total_miles
-    ORDER BY minimal_tier_miles DESC
+    ORDER BY minimal_tier_miles ASC
     LIMIT 1;
+  END IF;
 
-    -- Jika tidak ditemukan tier (seharusnya tidak terjadi karena Blue = 0),
-    -- fallback ke tier terendah
-    IF v_tier_baru IS NULL THEN
-        SELECT id_tier INTO v_tier_baru
-        FROM tier
-        ORDER BY minimal_tier_miles ASC
-        LIMIT 1;
-    END IF;
+  IF v_tier_baru <> v_tier_lama THEN
+    NEW.id_tier := v_tier_baru;
 
-    -- Update tier jika berbeda
-    IF v_tier_baru <> v_tier_lama THEN
-        NEW.id_tier := v_tier_baru;
+    SELECT nama INTO v_nama_lama FROM tier WHERE id_tier = v_tier_lama;
+    SELECT nama INTO v_nama_baru FROM tier WHERE id_tier = v_tier_baru;
 
-        -- Ambil nama tier lama dan baru untuk pesan
-        SELECT nama INTO v_nama_lama FROM tier WHERE id_tier = v_tier_lama;
-        SELECT nama INTO v_nama_baru FROM tier WHERE id_tier = v_tier_baru;
+    v_pesan := 'SUKSES: Tier Member "' || NEW.email || '" telah diperbarui dari "' 
+               || v_nama_lama || '" menjadi "' || v_nama_baru 
+               || '" berdasarkan total miles yang dimiliki.';
 
-        RAISE NOTICE 'SUKSES: Tier Member "%" telah diperbarui dari "%" menjadi "%" berdasarkan total miles yang dimiliki.',
-            NEW.email,
-            v_nama_lama,
-            v_nama_baru;
-    END IF;
+    RAISE NOTICE '%', v_pesan;
 
-    RETURN NEW;
+    -- Simpan pesan ke log agar bisa dibaca frontend
+    INSERT INTO tier_change_log (email, pesan, updated_at)
+    VALUES (NEW.email, v_pesan, NOW())
+    ON CONFLICT (email) DO UPDATE
+      SET pesan = EXCLUDED.pesan,
+          updated_at = EXCLUDED.updated_at;
+  END IF;
+
+  RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Drop trigger jika sudah ada sebelumnya, lalu buat ulang
 DROP TRIGGER IF EXISTS trg_update_member_tier ON member;
 
 CREATE TRIGGER trg_update_member_tier
-    BEFORE UPDATE OF total_miles ON member
-    FOR EACH ROW
-    EXECUTE FUNCTION fn_update_member_tier();
+  BEFORE UPDATE OF total_miles ON member
+  FOR EACH ROW
+  EXECUTE FUNCTION fn_update_member_tier();

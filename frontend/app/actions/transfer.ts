@@ -1,0 +1,111 @@
+"use server";
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+// GET riwayat transfer dan award_miles member
+export async function getDataTransfer(emailMember: string) {
+  const client = await pool.connect();
+  try {
+    const [transferRes, memberRes] = await Promise.all([
+      client.query(
+        `SELECT
+          t.email_member_1,
+          t.email_member_2,
+          p1.first_mid_name || ' ' || p1.last_name AS nama_pengirim,
+          p2.first_mid_name || ' ' || p2.last_name AS nama_penerima,
+          t.jumlah,
+          t.catatan,
+          TO_CHAR(t.timestamp, 'YYYY-MM-DD HH24:MI') AS timestamp
+         FROM transfer t
+         JOIN pengguna p1 ON LOWER(p1.email) = LOWER(t.email_member_1)
+         JOIN pengguna p2 ON LOWER(p2.email) = LOWER(t.email_member_2)
+         WHERE LOWER(t.email_member_1) = LOWER($1)
+            OR LOWER(t.email_member_2) = LOWER($1)
+         ORDER BY t.timestamp DESC`,
+        [emailMember]
+      ),
+      client.query(
+        `SELECT award_miles FROM member WHERE LOWER(email) = LOWER($1)`,
+        [emailMember]
+      ),
+    ]);
+
+    return {
+      success: true,
+      transfers: transferRes.rows,
+      award_miles: memberRes.rows[0]?.award_miles ?? 0,
+    };
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  } finally {
+    client.release();
+  }
+}
+
+// POST transfer miles
+// Trigger 2 otomatis cek saldo dan catat log
+// Trigger 4.2 otomatis jalan kalau total_miles penerima berubah dan tier naik
+export async function transferMiles(
+  emailPengirim: string,
+  emailPenerima: string,
+  jumlah: number,
+  catatan: string
+) {
+  const client = await pool.connect();
+
+  // Tangkap RAISE NOTICE dari:
+  // - trigger 2 (transfer berhasil)
+  // - trigger 4.2 (tier penerima berubah)
+  const notices: string[] = [];
+  client.on("notice", (msg) => {
+    if (msg.message) notices.push(msg.message);
+  });
+
+  try {
+    // Cek apakah penerima terdaftar sebagai member
+    const penerimaRes = await client.query(
+      `SELECT email FROM member WHERE LOWER(email) = LOWER($1)`,
+      [emailPenerima]
+    );
+    if (penerimaRes.rows.length === 0) {
+      return {
+        success: false,
+        message: "Email penerima tidak ditemukan sebagai Member aktif dalam sistem.",
+      };
+    }
+
+    await client.query(
+      `INSERT INTO transfer (email_member_1, email_member_2, timestamp, jumlah, catatan)
+       VALUES ($1, $2, NOW(), $3, $4)`,
+      [emailPengirim, emailPenerima, jumlah, catatan]
+    );
+
+    // Ambil award_miles terbaru pengirim setelah transfer
+    const updated = await client.query(
+      `SELECT award_miles FROM member WHERE LOWER(email) = LOWER($1)`,
+      [emailPengirim]
+    );
+
+    // Pesan dari trigger 2
+    const pesanTransfer = notices.find((n) => n.startsWith("SUKSES: Transfer"))
+      ?? `SUKSES: Transfer ${jumlah} miles berhasil.`;
+
+    // Pesan dari trigger 4.2 (kalau tier penerima naik)
+    const pesanTier = notices.find((n) => n.startsWith("SUKSES: Tier Member"));
+
+    return {
+      success: true,
+      message: pesanTransfer,
+      tier_message: pesanTier ?? null,
+      award_miles: updated.rows[0].award_miles,
+    };
+  } catch (err: any) {
+    // Pesan error dari trigger 2-1 (saldo tidak cukup)
+    return { success: false, message: err.message };
+  } finally {
+    client.release();
+  }
+}
