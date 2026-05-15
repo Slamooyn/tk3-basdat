@@ -25,10 +25,6 @@ interface RiwayatRedeem {
   miles: number;
 }
 
-const tipeIcon: Record<string, string> = {
-  Transfer: "⇄", Redeem: "🎁", Package: "🛒", Klaim: "✈",
-};
-
 export default function RedeemHadiah() {
   const [email] = useState<string>(getEmailFromStorage);
   const [awardMiles, setAwardMiles] = useState(0);
@@ -54,7 +50,9 @@ export default function RedeemHadiah() {
   }, [email]);
 
   const today = new Date().toISOString().split("T")[0];
-  const katalogAktif = katalog.filter((h) => h.program_end >= today && h.valid_start_date <= today);
+  const katalogAktif = katalog.filter(
+    (h) => h.program_end >= today && h.valid_start_date <= today
+  );
 
   async function konfirmasiRedeem() {
     if (!confirmHadiah || submitting) return;
@@ -64,13 +62,13 @@ export default function RedeemHadiah() {
     const res = await redeemHadiah(email, confirmHadiah.kode_hadiah);
 
     if (!res.success) {
+      // Pesan error dari trigger 3.1 (saldo tidak cukup / periode tidak aktif)
       setErrorMsg(res.message ?? "Gagal redeem.");
       setConfirmHadiah(null);
       setSubmitting(false);
       return;
     }
 
-    // Update state dengan data terbaru dari DB
     setAwardMiles(res.award_miles ?? awardMiles - confirmHadiah.miles);
     setRiwayat((prev) => [
       {
@@ -97,13 +95,11 @@ export default function RedeemHadiah() {
           <span className="font-bold text-gray-800">{awardMiles.toLocaleString("id-ID")}</span>
         </p>
 
-        {/* Pesan sukses dari action/trigger */}
         {successMsg && (
           <div className="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">
             ✓ {successMsg}
           </div>
         )}
-        {/* Pesan error dari action/trigger */}
         {errorMsg && (
           <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
             {errorMsg}
@@ -129,7 +125,9 @@ export default function RedeemHadiah() {
         {activeTab === "katalog" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {katalogAktif.length === 0 && (
-              <p className="text-gray-400 text-sm col-span-2">Tidak ada hadiah aktif saat ini.</p>
+              <p className="text-gray-400 text-sm col-span-2">
+                Tidak ada hadiah aktif saat ini.
+              </p>
             )}
             {katalogAktif.map((hadiah) => (
               <div
@@ -150,19 +148,23 @@ export default function RedeemHadiah() {
                 <p className="text-xs text-gray-400 mb-4">
                   Periode: {hadiah.valid_start_date} — {hadiah.program_end}
                 </p>
+
+                {/* Tombol selalu aktif — validasi saldo dilakukan oleh trigger 3.1 */}
                 <button
-                  onClick={() => { setErrorMsg(""); setConfirmHadiah(hadiah); }}
-                  disabled={awardMiles < hadiah.miles}
-                  className={`w-full py-2 rounded-lg text-sm font-bold transition-colors ${
-                    awardMiles >= hadiah.miles
-                      ? "bg-red-600 hover:bg-red-700 text-white"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
+                  onClick={() => {
+                    setErrorMsg("");
+                    setConfirmHadiah(hadiah);
+                  }}
+                  className="w-full py-2 rounded-lg text-sm font-bold transition-colors bg-red-600 hover:bg-red-700 text-white"
                 >
                   REDEEM
                 </button>
+
+                {/* Info saldo tidak cukup hanya sebagai hint, bukan disable button */}
                 {awardMiles < hadiah.miles && (
-                  <p className="text-xs text-red-400 mt-1 text-center">Miles tidak mencukupi</p>
+                  <p className="text-xs text-red-400 mt-1 text-center">
+                    ⚠ Miles Anda mungkin tidak mencukupi
+                  </p>
                 )}
               </div>
             ))}
@@ -196,7 +198,10 @@ export default function RedeemHadiah() {
                         -{Math.abs(r.miles).toLocaleString("id-ID")}
                       </td>
                       <td className="px-5 py-3 text-center">
-                        <button className="text-gray-400 hover:text-gray-600 transition-colors" title="Cetak">
+                        <button
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                          title="Cetak"
+                        >
                           🖨
                         </button>
                       </td>
@@ -209,6 +214,7 @@ export default function RedeemHadiah() {
         )}
       </div>
 
+      {/* Modal konfirmasi redeem */}
       {confirmHadiah && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
@@ -218,10 +224,19 @@ export default function RedeemHadiah() {
               <span className="font-bold text-gray-800">
                 {confirmHadiah.miles.toLocaleString("id-ID")}
               </span>{" "}
-              untuk reward <span className="font-semibold">{confirmHadiah.nama}</span> dengan kode{" "}
-              <span className="font-semibold">{confirmHadiah.kode_hadiah}</span> dari{" "}
+              untuk reward <span className="font-semibold">{confirmHadiah.nama}</span> dengan
+              kode <span className="font-semibold">{confirmHadiah.kode_hadiah}</span> dari{" "}
               {confirmHadiah.penyedia}
             </p>
+
+            {/* Info saldo di dalam modal */}
+            <div className="bg-gray-50 rounded-lg px-4 py-3 mb-4 text-sm flex justify-between">
+              <span className="text-gray-500">Award Miles kamu</span>
+              <span className={`font-bold ${awardMiles < confirmHadiah.miles ? "text-red-500" : "text-gray-800"}`}>
+                {awardMiles.toLocaleString("id-ID")} miles
+              </span>
+            </div>
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setConfirmHadiah(null)}
