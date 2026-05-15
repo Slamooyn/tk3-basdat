@@ -48,11 +48,8 @@ export default function RedeemHadiah() {
       setLoading(false);
     });
   }, [email]);
-
-  const today = new Date().toISOString().split("T")[0];
-  const katalogAktif = katalog.filter(
-    (h) => h.program_end >= today && h.valid_start_date <= today
-  );
+  
+  const katalogAktif = katalog;
 
   async function konfirmasiRedeem() {
     if (!confirmHadiah || submitting) return;
