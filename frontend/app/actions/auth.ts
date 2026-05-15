@@ -142,9 +142,12 @@ export async function updateProfile(email: string, data: {
   country_code: string;
   mobile_number: string;
   tanggal_lahir: string;
+  kode_maskapai?: string;
 }) {
   const client = await pool.connect();
   try {
+    await client.query("BEGIN");
+
     await client.query(
       `UPDATE pengguna SET
         salutation = $1,
@@ -166,8 +169,18 @@ export async function updateProfile(email: string, data: {
         email,
       ]
     );
+
+    if (data.kode_maskapai) {
+      await client.query(
+        `UPDATE staf SET kode_maskapai = $1 WHERE LOWER(email) = LOWER($2)`,
+        [data.kode_maskapai, email]
+      );
+    }
+
+    await client.query("COMMIT");
     return { success: true };
   } catch (err: any) {
+    await client.query("ROLLBACK");
     return { success: false, message: err.message };
   } finally {
     client.release();

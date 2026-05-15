@@ -28,6 +28,7 @@ export default function ProfilePage() {
             tanggal_lahir: res.data.tanggal_lahir
               ? new Date(res.data.tanggal_lahir).toISOString().split("T")[0]
               : "",
+            ...(res.data.kode_maskapai ? { kode_maskapai: res.data.kode_maskapai } : {}),
           });
         }
       });
@@ -216,9 +217,10 @@ export default function ProfilePage() {
             <div className="mt-3">
               <label className="text-sm">Kode Maskapai</label>
               <select
-                disabled
-                value={profile.kode_maskapai}
-                className="w-full mt-1 px-3 py-2 border rounded-md bg-gray-100"
+                name="kode_maskapai"
+                value={form.kode_maskapai ?? ""}
+                onChange={handleChange}
+                className="w-full mt-1 px-3 py-2 border rounded-md"
               >
                 <option value="GA">Garuda Indonesia</option>
                 <option value="JT">Lion Air</option>
