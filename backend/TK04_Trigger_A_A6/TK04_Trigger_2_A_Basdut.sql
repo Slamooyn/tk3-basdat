@@ -32,12 +32,11 @@ EXECUTE FUNCTION check_transfer_saldo();
 CREATE OR REPLACE FUNCTION log_transfer_miles()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Kurangi award_miles pengirim
+
     UPDATE member
     SET award_miles = award_miles - NEW.jumlah
     WHERE email = NEW.email_member_1;
 
-    -- Tambah award_miles DAN total_miles penerima
     UPDATE member
     SET award_miles = award_miles + NEW.jumlah,
         total_miles = total_miles + NEW.jumlah

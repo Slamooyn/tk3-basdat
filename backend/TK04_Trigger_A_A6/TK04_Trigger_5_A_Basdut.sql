@@ -1,7 +1,3 @@
--- TRIGGER 5.1
--- Sinkronisasi Total Miles Member setelah Klaim Missing Miles Disetujui
-
--- Function untuk trigger
 CREATE OR REPLACE FUNCTION sync_miles_after_klaim_disetujui()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -30,9 +26,6 @@ AFTER UPDATE ON claim_missing_miles
 FOR EACH ROW
 EXECUTE FUNCTION sync_miles_after_klaim_disetujui();
 
-
--- TRIGGER 5.2
--- Stored Procedure Pemeringkatan Top 5 Member berdasarkan Total Miles
 CREATE OR REPLACE FUNCTION get_top5_member_by_total_miles()
 RETURNS TABLE (
     rank BIGINT,

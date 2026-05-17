@@ -1,4 +1,3 @@
---Trigger Nomor 4, Bagian 1
 CREATE OR REPLACE FUNCTION fn_check_duplicate_claim()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -30,8 +29,6 @@ CREATE TRIGGER trg_check_duplicate_claim
     FOR EACH ROW
     EXECUTE FUNCTION fn_check_duplicate_claim();
     
-    
--- TK04 - Trigger Nomor 4, Bagian 2 
 
 CREATE TABLE IF NOT EXISTS tier_change_log (
   email VARCHAR(100) PRIMARY KEY,

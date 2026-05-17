@@ -1,8 +1,3 @@
--- TRIGGER 3.1
--- Validasi dan Update Saldo Award Miles saat Redeem Hadiah
--- Fired: BEFORE INSERT ON redeem
--- Cek: award_miles mencukupi DAN hadiah masih dalam periode aktif
--- Jika lolos: kurangi award_miles member
 
 CREATE OR REPLACE FUNCTION fn_validasi_redeem_hadiah()
 RETURNS TRIGGER AS $$
@@ -57,11 +52,6 @@ CREATE TRIGGER trg_validasi_redeem_hadiah
     BEFORE INSERT ON redeem
     FOR EACH ROW
     EXECUTE FUNCTION fn_validasi_redeem_hadiah();
-
--- TRIGGER 3.2
--- Sinkronisasi Award Miles setelah Transaksi Pembelian Package
--- Fired: AFTER INSERT ON member_award_miles_package
--- Tambah award_miles DAN total_miles member sesuai jumlah package
 
 CREATE OR REPLACE FUNCTION fn_sinkronisasi_miles_package()
 RETURNS TRIGGER AS $$
